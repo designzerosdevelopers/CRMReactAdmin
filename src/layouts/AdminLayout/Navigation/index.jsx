@@ -1,48 +1,41 @@
-import React, { useContext } from 'react';
-
+import React, { useContext, useState, useEffect } from 'react';
 import { ConfigContext } from '../../../contexts/ConfigContext';
+import { UserContext } from '../../../contexts/UserContext';
 import useWindowSize from '../../../hooks/useWindowSize';
-
 import NavLogo from './NavLogo';
 import NavContent from './NavContent';
-import navigation from '../../../menu-items';
+import getMenuItems from '../../../menu-items';
 
-const Navigation = () => {
-  const configContext = useContext(ConfigContext);
-  const { collapseMenu } = configContext.state;
+const NavigationComponent = () => {
+  const {
+    state: { collapseMenu }
+  } = useContext(ConfigContext);
   const windowSize = useWindowSize();
+  const { role } = useContext(UserContext); // Get role from UserContext
 
-  let navClass = ['pcoded-navbar'];
+  // Initialize state using the current role
+  const [navigation, setNavigation] = useState(() => getMenuItems(role));
 
-  navClass = [...navClass];
+  // Update navigation whenever the role changes
+  useEffect(() => {
+    setNavigation(getMenuItems(role));
+  }, [role]);
 
+  const navClass = ['pcoded-navbar'];
   if (windowSize.width < 992 && collapseMenu) {
-    navClass = [...navClass, 'mob-open'];
+    navClass.push('mob-open');
   } else if (collapseMenu) {
-    navClass = [...navClass, 'navbar-collapsed'];
+    navClass.push('navbar-collapsed');
   }
 
-  let navBarClass = ['navbar-wrapper'];
-
-  let navContent = (
-    <div className={navBarClass.join(' ')}>
-      <NavLogo />
-      <NavContent navigation={navigation.items} />
-    </div>
-  );
-  if (windowSize.width < 992) {
-    navContent = (
+  return (
+    <nav className={navClass.join(' ')}>
       <div className="navbar-wrapper">
         <NavLogo />
         <NavContent navigation={navigation.items} />
       </div>
-    );
-  }
-  return (
-    <React.Fragment>
-      <nav className={navClass.join(' ')}>{navContent}</nav>
-    </React.Fragment>
+    </nav>
   );
 };
 
-export default Navigation;
+export default NavigationComponent;

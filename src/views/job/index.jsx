@@ -13,16 +13,25 @@ const JobIndexPage = () => {
       .get(`${import.meta.env.VITE_API_URL}/jobs`)
       .then((response) => {
         console.log('Response data:', response.data);
-        // Determine if response.data is directly an array or nested within an object
+
         let fetchedJobs = [];
-        if (Array.isArray(response.data)) {
-          fetchedJobs = response.data;
-        } else if (Array.isArray(response.data.data)) {
+
+        // 1) Check if the API returns an array at response.data.jobs
+        if (Array.isArray(response.data.jobs)) {
+          fetchedJobs = response.data.jobs;
+        }
+        // 2) Or if your API returns data in a "data" field
+        else if (Array.isArray(response.data.data)) {
           fetchedJobs = response.data.data;
+        }
+        // 3) Or if the entire response is already an array
+        else if (Array.isArray(response.data)) {
+          fetchedJobs = response.data;
         } else {
-          // Optionally handle or log unexpected structure
+          // Handle unexpected structure
           console.warn('Unexpected response structure:', response.data);
         }
+
         setJobs(fetchedJobs);
         setError('');
       })
@@ -38,14 +47,14 @@ const JobIndexPage = () => {
     <>
       <Row className="mb-3">
         <Col>
-          <h5 className="d-inline-block me-3">Job / Index</h5>
+          <h5 className="d-inline-block me-3">Jobs / Index</h5>
           <button className="btn btn-primary float-end">Create</button>
         </Col>
       </Row>
 
       <Row>
         <Col>
-          <Card title="jobs list" isOption>
+          <Card title="Jobs List" isOption>
             {loading ? (
               <p>Loading...</p>
             ) : error ? (
@@ -54,20 +63,20 @@ const JobIndexPage = () => {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Project Title</th>
+                    <th>Job Title</th>
                     <th>Budget</th>
-                    <th>Bid Closing</th>
-                    <th>Candidates</th>
+                    <th>Bid Close</th>
+                    <th>Organization</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {jobs.map((job) => (
                     <tr key={job.id}>
-                      <td>{job.project_title}</td>
+                      <td>{job.job_title}</td>
                       <td>{job.budget}</td>
-                      <td>{job.bid_closing}</td>
-                      <td>{job.candidates_count || 0}</td>
+                      <td>{job.bid_close}</td>
+                      <td>{job.organization_name || 'N/A'}</td>
                       <td>
                         <button className="btn btn-warning btn-sm me-2">Edit</button>
                         <button className="btn btn-danger btn-sm">Delete</button>

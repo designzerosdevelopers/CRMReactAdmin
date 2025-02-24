@@ -91,7 +91,7 @@ const ConfigProvider = ({ children }) => {
 };
 
 ConfigProvider.propTypes = {
-  children: PropTypes.object
+  children: PropTypes.node
 };
 
 export { ConfigContext, ConfigProvider };

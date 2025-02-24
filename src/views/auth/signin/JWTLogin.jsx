@@ -1,43 +1,78 @@
-import React from 'react';
-import { Row, Col, Alert, Button } from 'react-bootstrap';
-import * as Yup from 'yup';
-import { Formik } from 'formik';
-import axios from 'axios';
+// E:\ongoing-projects\CRMReactAdmin\src\views\auth\signin\JWTLogin.jsx
+import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+import { Row, Col, Button, Alert } from 'react-bootstrap';
+import { UserContext } from '../../../contexts/UserContext';
 
 const JWTLogin = () => {
+  const { setUser, updateRole } = useContext(UserContext);
   const navigate = useNavigate();
+  const [componentErrors, setComponentErrors] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (values, { setSubmitting, setErrors }) => {
+  // On mount, fetch CSRF cookie
+  useEffect(() => {
+    const fetchCsrfCookie = async () => {
+      try {
+        // Adjust URL based on your Sanctum configuration.
+        // If sanctum.php has 'prefix' => 'api', then use `/api/sanctum/csrf-cookie`
+        await fetch(`${import.meta.env.VITE_API_URL}/sanctum/csrf-cookie`, {
+          method: 'GET',
+          credentials: 'include', // send cookies
+          headers: {
+            Accept: 'application/json'
+          }
+        });
+      } catch (error) {
+        console.error('Error fetching CSRF cookie:', error);
+      }
+    };
+    fetchCsrfCookie();
+  }, []);
+
+  // Updated handleLogin to receive Formik values instead of event
+  const handleLogin = async (values, { setSubmitting }) => {
+    setLoading(true);
+    setComponentErrors([]);
     try {
-      const response = await axios.post('http://127.0.0.1:8000/api/login', {
-        email: values.email,
-        password: values.password
+      // Adjust the login URL if needed (e.g., include "api" prefix if required)
+      const loginUrl = `${import.meta.env.VITE_API_URL}/login`;
+      const token = localStorage.getItem('auth_token');
+
+      const response = await fetch(loginUrl, {
+        method: 'POST',
+        credentials: 'include', // ensures cookies are sent along
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({
+          email: values.email,
+          password: values.password
+        })
       });
 
-      if (response.status === 200) {
-        console.log('data', response.data.data.roles);
-        // Store the token in localStorage
-        localStorage.setItem('auth_token', response.data.data.token);
-
-        // Access the name property from the first role in the roles array
-        const roleName = response.data.data.roles;
-        localStorage.setItem('role', roleName);
-
-
-        // Set the default Authorization header for Axios
-        axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-
-        // Redirect to the dashboard route
+      if (!response.ok) {
+        const data = await response.json();
+        setComponentErrors(data.errors || ['Login failed']);
+      } else {
+        const data = await response.json();
+        // Update UserContext with full user data and role
+        updateRole(data.data.roles);
+        setUser(data.data.user);
+        if (data.data.token) {
+          localStorage.setItem('auth_token', data.data.token);
+        }
         navigate('/app/dashboard/default');
       }
     } catch (error) {
-      if (error.response) {
-        setErrors({ submit: 'Error ' + error.response.status + ': ' + error.response.data.message });
-      } else {
-        setErrors({ submit: 'Network error: ' + error.message });
-      }
+      console.error('Login error:', error);
+      setComponentErrors(['An unexpected error occurred']);
     } finally {
+      setLoading(false);
       setSubmitting(false);
     }
   };
@@ -60,24 +95,24 @@ const JWTLogin = () => {
           <div className="form-group mb-3">
             <input
               className="form-control"
-              label="Email Address / Username"
               name="email"
               onBlur={handleBlur}
               onChange={handleChange}
               type="email"
               value={values.email}
+              placeholder="Email Address / Username"
             />
             {touched.email && errors.email && <small className="text-danger form-text">{errors.email}</small>}
           </div>
           <div className="form-group mb-4">
             <input
               className="form-control"
-              label="Password"
               name="password"
               onBlur={handleBlur}
               onChange={handleChange}
               type="password"
               value={values.password}
+              placeholder="Password"
             />
             {touched.password && errors.password && <small className="text-danger form-text">{errors.password}</small>}
           </div>
@@ -89,16 +124,20 @@ const JWTLogin = () => {
             </label>
           </div>
 
-          {errors.submit && (
+          {componentErrors.length > 0 && (
             <Col sm={12}>
-              <Alert>{errors.submit}</Alert>
+              <Alert variant="danger">
+                {componentErrors.map((err, idx) => (
+                  <div key={idx}>{err}</div>
+                ))}
+              </Alert>
             </Col>
           )}
 
-          <Row>
-            <Col mt={2}>
-              <Button className="btn-block mb-4" color="primary" disabled={isSubmitting} size="large" type="submit" variant="primary">
-                Signin
+          <Row className="mt-2">
+            <Col>
+              <Button className="btn-block mb-4" variant="primary" type="submit" size="lg" disabled={isSubmitting || loading}>
+                {loading ? 'Logging in...' : 'Signin'}
               </Button>
             </Col>
           </Row>
