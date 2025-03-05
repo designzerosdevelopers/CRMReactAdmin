@@ -142,8 +142,33 @@ const routes = [
       },
       {
         exact: 'true',
+        path: '/employee/show/:id',
+        element: lazy(() => import('./views/employee/show'))
+      },
+      {
+        exact: 'true',
+        path: '/employee/edit/:id',
+        element: lazy(() => import('./views/employee/edit'))
+      },
+      {
+        exact: 'true',
         path: '/organization/index',
         element: lazy(() => import('./views/organization/index'))
+      },
+      {
+        exact: 'true',
+        path: '/organization/create',
+        element: lazy(() => import('./views/organization/create'))
+      },
+      {
+        exact: 'true',
+        path: '/organization/show/:id',
+        element: lazy(() => import('./views/organization/show'))
+      },
+      {
+        exact: 'true',
+        path: '/organization/edit/:id',
+        element: lazy(() => import('./views/organization/edit'))
       },
       {
         exact: 'true',
@@ -154,6 +179,17 @@ const routes = [
         exact: 'true',
         path: '/categories/index',
         element: lazy(() => import('./views/categories/index'))
+      },
+      
+      {
+        exact: 'true',
+        path: '/categories/create',
+        element: lazy(() => import('./views/categories/create'))
+      },
+      {
+        exact: 'true',
+        path: '/categories/edit/:id',
+        element: lazy(() => import('./views/categories/edit'))
       },
       {
         exact: 'true',

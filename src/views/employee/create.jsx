@@ -74,7 +74,7 @@ const EmployeeCreate = ({ orgId, csrfToken, initialErrors = [], initialSuccess =
 
   return (
     <div className="container-xxl flex-grow-1 container-p-y">
-      <PageTitle menu="Employee" page="Create" />
+ 
 
       {errors.length > 0 && (
         <div className="alert alert-danger">

@@ -1,34 +1,37 @@
 import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 
-import friend from './friends';
+import friendData from './friends'; // renamed to friendData to avoid confusion with Friend component
 import Friend from './Friend';
 import Chat from './Chat';
 
 const Friends = ({ listOpen }) => {
+  // Initialize chatOpen based on listOpen and user as null
   const [chatOpen, setChatOpen] = useState(listOpen);
-  const [user, setUser] = useState([]);
+  const [user, setUser] = useState(null);
 
+  // Only update chatOpen if listOpen changes to false and chatOpen isn't already false.
   useEffect(() => {
-    setChatOpen(false);
-  }, [listOpen]);
+    if (!listOpen && chatOpen !== false) {
+      setChatOpen(false);
+    }
+  }, [listOpen, chatOpen]);
 
-  const friendList = friend.map((f) => {
-    return (
-      <Friend
-        key={f.id}
-        data={f}
-        activeId={user.id}
-        clicked={() => {
-          setChatOpen(true);
-          setUser(f);
-        }}
-      />
-    );
-  });
+  // Map through friendData to render the friend list.
+  const friendList = friendData.map((f) => (
+    <Friend
+      key={f.id}
+      data={f}
+      activeId={user ? user.id : null}
+      clicked={() => {
+        setChatOpen(true);
+        setUser(f);
+      }}
+    />
+  ));
 
   return (
-    <React.Fragment>
+    <>
       {friendList}
       <Chat
         user={user}
@@ -36,10 +39,10 @@ const Friends = ({ listOpen }) => {
         listOpen={listOpen}
         closed={() => {
           setChatOpen(false);
-          setUser([]);
+          setUser(null);
         }}
       />
-    </React.Fragment>
+    </>
   );
 };
 

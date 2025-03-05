@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useMemo } from 'react';
 import { ConfigContext } from '../../../contexts/ConfigContext';
 import { UserContext } from '../../../contexts/UserContext';
 import useWindowSize from '../../../hooks/useWindowSize';
@@ -11,15 +11,10 @@ const NavigationComponent = () => {
     state: { collapseMenu }
   } = useContext(ConfigContext);
   const windowSize = useWindowSize();
-  const { role } = useContext(UserContext); // Get role from UserContext
+  const { role } = useContext(UserContext);
 
-  // Initialize state using the current role
-  const [navigation, setNavigation] = useState(() => getMenuItems(role));
-
-  // Update navigation whenever the role changes
-  useEffect(() => {
-    setNavigation(getMenuItems(role));
-  }, [role]);
+  // Compute the navigation menu only when role changes.
+  const navigation = useMemo(() => getMenuItems(role), [role]);
 
   const navClass = ['pcoded-navbar'];
   if (windowSize.width < 992 && collapseMenu) {

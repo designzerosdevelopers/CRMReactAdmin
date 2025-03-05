@@ -1,17 +1,16 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { ListGroup } from 'react-bootstrap';
 import { Link, useLocation } from 'react-router-dom';
-
-import getMenuItems from '../../../menu-items'; // Import the function
+import getMenuItems from '../../../menu-items';
 import { UserContext } from '../../../contexts/UserContext';
 import { BASE_TITLE } from '../../../config/constant';
 
 const Breadcrumb = () => {
   const location = useLocation();
-  const { role } = useContext(UserContext); // Get role from context
+  const { role } = useContext(UserContext);
 
-  // Call getMenuItems with the role to get the navigation object
-  const navigation = getMenuItems(role);
+  // Memoize navigation so it only recalculates when role changes
+  const navigation = useMemo(() => getMenuItems(role), [role]);
 
   const [main, setMain] = useState(null);
   const [item, setItem] = useState(null);
@@ -24,7 +23,8 @@ const Breadcrumb = () => {
         }
       });
     }
-  }, [navigation, location.pathname]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigation, location.pathname]); // only run when navigation or pathname changes
 
   const getCollapse = (navItem) => {
     if (navItem.children) {
@@ -33,8 +33,9 @@ const Breadcrumb = () => {
           getCollapse(child);
         } else if (child.type === 'item') {
           if (location.pathname === child.url) {
-            setMain(navItem);
-            setItem(child);
+            // Only update state if the values have actually changed
+            if (main !== navItem) setMain(navItem);
+            if (item !== child) setItem(child);
           }
         }
       });

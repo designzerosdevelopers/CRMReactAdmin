@@ -1,373 +1,274 @@
-import React, { useState } from 'react';
-import PageTitle from '../components/PageTitle'; // Adjust the import path as needed
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import axios from 'axios';
 
-const EmployeeEdit = ({ user, employee, orgId, csrfToken }) => {
-  // Initialize state using values from the passed objects
-  const [name, setName] = useState(user.name || '');
-  const [email, setEmail] = useState(user.email || '');
-  const [gender, setGender] = useState(employee.gender || '');
-  const [phoneNumber, setPhoneNumber] = useState(employee.phone_number || '');
-  const [address, setAddress] = useState(employee.address || '');
-  const [birthDate, setBirthDate] = useState(employee.birth_date || '');
-  const [zipcode, setZipcode] = useState(employee.zipcode || '');
-  const [latestDegree, setLatestDegree] = useState(employee.latest_degree || '');
-  const [latestUniversity, setLatestUniversity] = useState(employee.latest_university || '');
-  const [currentOrganization, setCurrentOrganization] = useState(employee.current_organization || '');
-  const [currentDepartment, setCurrentDepartment] = useState(employee.current_department || '');
-  const [currentPosition, setCurrentPosition] = useState(employee.current_position || '');
-  const [password, setPassword] = useState('');
-  const [passwordConfirmation, setPasswordConfirmation] = useState('');
-  
-  // For image upload
-  const defaultAvatar = "../assets/img/avatars/1.png";
-  const [avatar, setAvatar] = useState(defaultAvatar);
-  const [selectedFile, setSelectedFile] = useState(null);
-  
-  // For messages
+const EmployeeEdit = () => {
+  const { id } = useParams();
+  const [employeeData, setEmployeeData] = useState({
+    // Combine all fields from both "user" and "employee"
+    name: '',
+    email: '',
+    gender: '',
+    phone_number: '',
+    address: '',
+    birth_date: '',
+    zipcode: '',
+    latest_degree: '',
+    latest_university: '',
+    current_organization: '',
+    current_department: '',
+    current_position: '',
+    password: '',
+    password_confirmation: ''
+  });
+
+  const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState([]);
-  const [success, setSuccess] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
 
+  // Fetch existing employee data
+  useEffect(() => {
+    axios
+      .get(`${import.meta.env.VITE_API_URL}/employee/${id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      })
+      .then((response) => {
+        // "data" is the employee object, which includes "employee" fields + "user" relationship
+        // e.g., response.data.data => { id, phone_number, user: { name, email }, etc. }
+        const emp = response.data.data; // The "Employee" model
+        const usr = emp.user; // The related "User"
+
+        // Merge "user" fields + "employee" fields into one object
+        setEmployeeData({
+          name: usr.name || '',
+          email: usr.email || '',
+          gender: emp.gender || '',
+          phone_number: emp.phone_number || '',
+          address: emp.address || '',
+          birth_date: emp.birth_date || '',
+          zipcode: emp.zipcode || '',
+          latest_degree: emp.latest_degree || '',
+          latest_university: emp.latest_university || '',
+          current_organization: emp.current_organization || '',
+          current_department: emp.current_department || '',
+          current_position: emp.current_position || '',
+          password: '',
+          password_confirmation: ''
+        });
+
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error fetching employee data:', error);
+        setLoading(false);
+      });
+  }, [id]);
+
+  // Handle text input changes
+  const handleChange = (e) => {
+    setEmployeeData({ ...employeeData, [e.target.name]: e.target.value });
+  };
+
+  // Handle file change
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setAvatar(URL.createObjectURL(file));
-    }
+    setSelectedFile(e.target.files[0]);
   };
 
-  const handleResetImage = () => {
-    setSelectedFile(null);
-    setAvatar(defaultAvatar);
-  };
-
+  // Submit updated data
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setSuccessMessage('');
     setErrors([]);
-    setSuccess('');
 
-    // Determine the endpoint based on orgId
-    const endpoint = orgId
-      ? `/api/org-employee-update/${user.id}`
-      : `/api/employee-update/${user.id}`;
-
-    // Use FormData for sending form data along with potential file upload
     const formData = new FormData();
-    formData.append('name', name);
-    formData.append('email', email);
-    formData.append('gender', gender);
-    formData.append('phone_number', phoneNumber);
-    formData.append('address', address);
-    formData.append('birth_date', birthDate);
-    formData.append('zipcode', zipcode);
-    formData.append('latest_degree', latestDegree);
-    formData.append('latest_university', latestUniversity);
-    formData.append('current_organization', currentOrganization);
-    formData.append('current_department', currentDepartment);
-    formData.append('current_position', currentPosition);
-    formData.append('password', password);
-    formData.append('password_confirmation', passwordConfirmation);
-    if (orgId) {
-      formData.append('creator', orgId);
-    }
+
+    // Append all non-empty text fields
+    Object.entries(employeeData).forEach(([key, value]) => {
+      if (value) {
+        formData.append(key, value);
+      }
+    });
+
+    // Append file if selected
     if (selectedFile) {
       formData.append('avatar', selectedFile);
     }
-    if (csrfToken) {
-      formData.append('_csrf', csrfToken);
+    console.log('EmployeeData just before submitting:', employeeData);
+
+    // ✅ Debug: Log the FormData key/value pairs
+    for (let [key, val] of formData.entries()) {
+      console.log(key, val);
     }
 
-    try {
-      const response = await fetch(endpoint, {
-        method: 'PUT',
-        body: formData,
-      });
+    // Append _method for spoofing
+    formData.append('_method', 'PUT');
 
-      if (!response.ok) {
-        const data = await response.json();
-        setErrors(data.errors || ['An error occurred']);
-      } else {
-        const data = await response.json();
-        setSuccess(data.message || 'Profile updated successfully');
-      }
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/employee/update/${id}`, formData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`
+          // Let Axios set the Content-Type header automatically.
+        }
+      });
+      setSuccessMessage('Employee updated successfully!');
+      setEmployeeData({ ...employeeData, ...response.data.data });
     } catch (error) {
-      console.error('Submission error:', error);
-      setErrors(['An unexpected error occurred']);
-    } finally {
-      setLoading(false);
+      console.error('Error updating employee:', error.response?.data);
+      setErrors(error.response?.data?.errors || ['An unexpected error occurred']);
     }
   };
 
+  if (loading) return <div>Loading...</div>;
+
   return (
-    <div className="container-xxl flex-grow-1 container-p-y">
-      <PageTitle menu="Employee" page="Edit" />
+    <div className="container">
+      <h2>Edit Employee</h2>
+
       {errors.length > 0 && (
         <div className="alert alert-danger">
           <ul>
-            {errors.map((err, idx) => (
-              <li key={idx}>{err}</li>
+            {errors.map((err, index) => (
+              <li key={index}>{err}</li>
             ))}
           </ul>
         </div>
       )}
-      {success && (
-        <div className="alert alert-success">{success}</div>
-      )}
-      <div className="row">
-        <div className="col-md-12">
-          <div className="card mb-4">
-            <h5 className="card-header">Profile Details</h5>
-            {/* Image Upload Section */}
-            <div className="card-body">
-              <div className="d-flex align-items-start align-items-sm-center gap-4">
-                <img
-                  src={avatar}
-                  alt="user-avatar"
-                  className="d-block rounded"
-                  height="100"
-                  width="100"
-                  id="uploadedAvatar"
-                />
-                <div className="button-wrapper">
-                  <label
-                    htmlFor="upload"
-                    className="btn btn-primary me-2 mb-4"
-                    tabIndex="0"
-                  >
-                    <span className="d-none d-sm-block">Upload new photo</span>
-                    <i className="bx bx-upload d-block d-sm-none"></i>
-                    <input
-                      type="file"
-                      id="upload"
-                      className="account-file-input"
-                      hidden
-                      accept="image/png, image/jpeg"
-                      onChange={handleFileChange}
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary account-image-reset mb-4"
-                    onClick={handleResetImage}
-                  >
-                    <i className="bx bx-reset d-block d-sm-none"></i>
-                    <span className="d-none d-sm-block">Reset</span>
-                  </button>
-                  <p className="text-muted mb-0">
-                    Allowed JPG, GIF or PNG. Max size of 800K
-                  </p>
-                </div>
-              </div>
-            </div>
-            <hr className="my-0" />
-            {/* Form Section */}
-            <div className="card-body">
-              <form onSubmit={handleSubmit}>
-                <div className="row">
-                  <div className="mb-3 col-md-6">
-                    <label htmlFor="firstName" className="form-label">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="firstName"
-                      name="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      autoFocus
-                    />
-                  </div>
-                  <div className="mb-3 col-md-6">
-                    <label htmlFor="email" className="form-label">
-                      E-mail
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="email"
-                      name="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="john.doe@example.com"
-                    />
-                  </div>
-                  <div className="mb-3 col-md-6">
-                    <label htmlFor="gender" className="form-label">
-                      Gender
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="gender"
-                      name="gender"
-                      value={gender}
-                      onChange={(e) => setGender(e.target.value)}
-                    />
-                  </div>
-                  <div className="mb-3 col-md-6">
-                    <label htmlFor="phoneNumber" className="form-label">
-                      Phone Number
-                    </label>
-                    <div className="input-group input-group-merge">
-                      <span className="input-group-text"></span>
-                      <input
-                        type="text"
-                        id="phoneNumber"
-                        name="phone_number"
-                        className="form-control"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="mb-3 col-md-6">
-                    <label htmlFor="address" className="form-label">
-                      Address
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="address"
-                      name="address"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                    />
-                  </div>
-                  <div className="mb-3 col-md-6">
-                    <label htmlFor="birthDate" className="form-label">
-                      Birth Date
-                    </label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      id="birthDate"
-                      name="birth_date"
-                      value={birthDate}
-                      onChange={(e) => setBirthDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="mb-3 col-md-6">
-                    <label htmlFor="zipCode" className="form-label">
-                      Zip Code
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="zipCode"
-                      name="zipcode"
-                      value={zipcode}
-                      onChange={(e) => setZipcode(e.target.value)}
-                      maxLength="6"
-                    />
-                  </div>
-                  <div className="mb-3 col-md-6">
-                    <label htmlFor="latestDegree" className="form-label">
-                      Latest Degree
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="latestDegree"
-                      name="latest_degree"
-                      value={latestDegree}
-                      onChange={(e) => setLatestDegree(e.target.value)}
-                    />
-                  </div>
-                  <div className="mb-3 col-md-6">
-                    <label htmlFor="latestUniversity" className="form-label">
-                      Latest University
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="latestUniversity"
-                      name="latest_university"
-                      value={latestUniversity}
-                      onChange={(e) => setLatestUniversity(e.target.value)}
-                    />
-                  </div>
-                  <div className="mb-3 col-md-6">
-                    <label htmlFor="currentOrganization" className="form-label">
-                      Current Organization
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="currentOrganization"
-                      name="current_organization"
-                      value={currentOrganization}
-                      onChange={(e) => setCurrentOrganization(e.target.value)}
-                    />
-                  </div>
-                  <div className="mb-3 col-md-6">
-                    <label htmlFor="currentDepartment" className="form-label">
-                      Current Department
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="currentDepartment"
-                      name="current_department"
-                      value={currentDepartment}
-                      onChange={(e) => setCurrentDepartment(e.target.value)}
-                    />
-                  </div>
-                  <div className="mb-3 col-md-6">
-                    <label htmlFor="currentPosition" className="form-label">
-                      Current Position
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="currentPosition"
-                      name="current_position"
-                      value={currentPosition}
-                      onChange={(e) => setCurrentPosition(e.target.value)}
-                    />
-                  </div>
-                  <div className="mb-3 col-md-6">
-                    <label htmlFor="pass" className="form-label">
-                      Password
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="pass"
-                      name="password"
-                      placeholder="Change Your Password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </div>
-                  <div className="mb-3 col-md-6">
-                    <label htmlFor="cpass" className="form-label">
-                      Password Confirmation
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="cpass"
-                      name="password_confirmation"
-                      placeholder="Confirm Your Password"
-                      value={passwordConfirmation}
-                      onChange={(e) => setPasswordConfirmation(e.target.value)}
-                    />
-                  </div>
-                </div>
-                {orgId && <input type="hidden" name="creator" value={orgId} />}
-                <div className="mt-2">
-                  <button type="submit" className="btn btn-primary me-2" disabled={loading}>
-                    {loading ? 'Saving...' : 'Save changes'}
-                  </button>
-                </div>
-              </form>
-            </div>
-            {/* /Account */}
-          </div>
+
+      {successMessage && <div className="alert alert-success">{successMessage}</div>}
+
+      <form onSubmit={handleSubmit}>
+        {/* Name */}
+        <div className="mb-3">
+          <label>Name:</label>
+          <input type="text" name="name" value={employeeData.name} onChange={handleChange} className="form-control" />
         </div>
-      </div>
+
+        {/* Email */}
+        <div className="mb-3">
+          <label>Email:</label>
+          <input type="email" name="email" value={employeeData.email} onChange={handleChange} className="form-control" />
+        </div>
+
+        {/* Gender */}
+        <div className="mb-3">
+          <label>Gender:</label>
+          <select name="gender" value={employeeData.gender} onChange={handleChange} className="form-control">
+            <option value="">Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        {/* Phone Number */}
+        <div className="mb-3">
+          <label>Phone Number:</label>
+          <input type="text" name="phone_number" value={employeeData.phone_number} onChange={handleChange} className="form-control" />
+        </div>
+
+        {/* Address */}
+        <div className="mb-3">
+          <label>Address:</label>
+          <input type="text" name="address" value={employeeData.address} onChange={handleChange} className="form-control" />
+        </div>
+
+        {/* Birth Date */}
+        <div className="mb-3">
+          <label>Birth Date:</label>
+          <input type="date" name="birth_date" value={employeeData.birth_date} onChange={handleChange} className="form-control" />
+        </div>
+
+        {/* Zipcode */}
+        <div className="mb-3">
+          <label>Zipcode:</label>
+          <input type="text" name="zipcode" value={employeeData.zipcode} onChange={handleChange} className="form-control" />
+        </div>
+
+        {/* Latest Degree */}
+        <div className="mb-3">
+          <label>Latest Degree:</label>
+          <input type="text" name="latest_degree" value={employeeData.latest_degree} onChange={handleChange} className="form-control" />
+        </div>
+
+        {/* Latest University */}
+        <div className="mb-3">
+          <label>Latest University:</label>
+          <input
+            type="text"
+            name="latest_university"
+            value={employeeData.latest_university}
+            onChange={handleChange}
+            className="form-control"
+          />
+        </div>
+
+        {/* Current Organization */}
+        <div className="mb-3">
+          <label>Current Organization:</label>
+          <input
+            type="text"
+            name="current_organization"
+            value={employeeData.current_organization}
+            onChange={handleChange}
+            className="form-control"
+          />
+        </div>
+
+        {/* Current Department */}
+        <div className="mb-3">
+          <label>Current Department:</label>
+          <input
+            type="text"
+            name="current_department"
+            value={employeeData.current_department}
+            onChange={handleChange}
+            className="form-control"
+          />
+        </div>
+
+        {/* Current Position */}
+        <div className="mb-3">
+          <label>Current Position:</label>
+          <input
+            type="text"
+            name="current_position"
+            value={employeeData.current_position}
+            onChange={handleChange}
+            className="form-control"
+          />
+        </div>
+
+        {/* Password (Optional) */}
+        <div className="mb-3">
+          <label>New Password:</label>
+          <input
+            type="password"
+            name="password"
+            onChange={handleChange}
+            className="form-control"
+            minLength="8" // Browser-level validation for at least 8 characters
+          />
+        </div>
+
+        {/* Confirm Password */}
+        <div className="mb-3">
+          <label>Confirm Password:</label>
+          <input type="password" name="password_confirmation" onChange={handleChange} className="form-control" minLength="8" />
+        </div>
+
+        {/* Avatar Upload */}
+        <div className="mb-3">
+          <label>Profile Picture:</label>
+          <input type="file" onChange={handleFileChange} className="form-control" />
+        </div>
+
+        <button type="submit" className="btn btn-primary">
+          Update Employee
+        </button>
+      </form>
     </div>
   );
 };

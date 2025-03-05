@@ -145,6 +145,31 @@ const getMenuItems = (role) => {
         ]
       }
     ];
+  } else if (role === 'employee') {
+    items = [
+      {
+        id: 'pages',
+        title: 'Pages',
+        type: 'group',
+        icon: 'icon-pages',
+        children: [
+          {
+            id: 'dashboard',
+            title: 'Dashboard',
+            type: 'item',
+            icon: 'feather icon-home',
+            url: '/app/dashboard/organization'
+          },
+          {
+            id: 'job',
+            title: 'Job',
+            type: 'item',
+            icon: 'feather icon-briefcase',
+            url: '/job/index'
+          }
+        ]
+      }
+    ];
   } else {
     items = [];
   }
