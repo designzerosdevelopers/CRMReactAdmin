@@ -37,13 +37,12 @@ const JWTLogin = () => {
     setLoading(true);
     setComponentErrors([]);
     try {
-      // Adjust the login URL if needed (e.g., include "api" prefix if required)
       const loginUrl = `${import.meta.env.VITE_API_URL}/login`;
       const token = localStorage.getItem('auth_token');
 
       const response = await fetch(loginUrl, {
         method: 'POST',
-        credentials: 'include', // ensures cookies are sent along
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
@@ -60,12 +59,20 @@ const JWTLogin = () => {
         setComponentErrors(data.errors || ['Login failed']);
       } else {
         const data = await response.json();
-        // Update UserContext with full user data and role
-        updateRole(data.data.roles);
-        setUser(data.data.user);
+
+        // ✅ Extract the role correctly (convert to string if needed)
+        const userRole = Array.isArray(data.data.roles) ? data.data.roles[0] : data.data.roles;
+
+        // ✅ Store role & user in context
+        updateRole(userRole);
+        setUser({ ...data.data.user, role: userRole });
+
+        // ✅ Save role & token in localStorage
+        localStorage.setItem('role', userRole);
         if (data.data.token) {
           localStorage.setItem('auth_token', data.data.token);
         }
+
         navigate('/app/dashboard/default');
       }
     } catch (error) {

@@ -29,9 +29,7 @@ export const renderRoutes = (routes = []) => (
             path={route.path}
             element={
               <Guard>
-                <Layout>
-                  {route.routes ? renderRoutes(route.routes) : <Element props={true} />}
-                </Layout>
+                <Layout>{route.routes ? renderRoutes(route.routes) : <Element props={true} />}</Layout>
               </Guard>
             }
           />
@@ -63,6 +61,11 @@ const routes = [
     exact: 'true',
     path: '/auth/signup-1',
     element: lazy(() => import('./views/auth/signup/SignUp1'))
+  },
+  {
+    exact: 'true',
+    path: '/accept-invitation/:token',
+    element: lazy(() => import('./views/invite/reg-invitation'))
   },
   // Protected Routes
   {
@@ -170,17 +173,23 @@ const routes = [
         path: '/organization/edit/:id',
         element: lazy(() => import('./views/organization/edit'))
       },
+     
       {
         exact: 'true',
-        path: '/job/index',
-        element: lazy(() => import('./views/job/index'))
+        path: '/organization/show/:id',
+        element: lazy(() => import('./views/job/show'))
+      },
+      {
+        exact: 'true',
+        path: '/organization/edit/:id',
+        element: lazy(() => import('./views/job/edit'))
       },
       {
         exact: 'true',
         path: '/categories/index',
         element: lazy(() => import('./views/categories/index'))
       },
-      
+
       {
         exact: 'true',
         path: '/categories/create',
@@ -193,9 +202,26 @@ const routes = [
       },
       {
         exact: 'true',
+        path: '/job/index',
+        element: lazy(() => import('./views/job/index'))
+      },
+
+      {
+        exact: 'true',
+        path: '/job/create',
+        element: lazy(() => import('./views/job/create'))
+      },
+      {
+        exact: 'true',
+        path: '/job/edit/:id',
+        element: lazy(() => import('./views/job/edit'))
+      },
+      {
+        exact: 'true',
         path: '/invite',
         element: lazy(() => import('./views/invite/index'))
       },
+
       {
         exact: 'true',
         path: '/user-permission/select-user',

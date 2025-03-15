@@ -1,4 +1,3 @@
-// src/utils/getMenuItems.js
 const getMenuItems = (role) => {
   let items = [];
 
@@ -10,20 +9,6 @@ const getMenuItems = (role) => {
         type: 'group',
         icon: 'icon-pages',
         children: [
-          {
-            id: 'forms',
-            title: 'Form Elements',
-            type: 'item',
-            icon: 'feather icon-file-text',
-            url: '/forms/form-basic'
-          },
-          {
-            id: 'table',
-            title: 'Table',
-            type: 'item',
-            icon: 'feather icon-server',
-            url: '/tables/bootstrap'
-          },
           {
             id: 'dashboard',
             title: 'Dashboard',
@@ -176,6 +161,7 @@ const getMenuItems = (role) => {
 
   return { items };
 };
+
 
 export default getMenuItems;
 

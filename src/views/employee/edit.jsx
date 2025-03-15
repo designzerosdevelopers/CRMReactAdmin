@@ -26,7 +26,7 @@ const EmployeeEdit = () => {
   const [errors, setErrors] = useState([]);
   const [successMessage, setSuccessMessage] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
-
+  
   // Fetch existing employee data
   useEffect(() => {
     axios

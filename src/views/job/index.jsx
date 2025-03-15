@@ -1,34 +1,59 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Row, Col } from 'react-bootstrap';
 import axios from 'axios';
 import Card from '../../components/Card/MainCard';
+import { Link } from 'react-router-dom';
 
 const JobIndexPage = () => {
   const [jobs, setJobs] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this job?')) return;
+
+    try {
+      const endpoint = `/job/${id}`;
+      const url = `${import.meta.env.VITE_API_URL}${endpoint}`;
+
+      const response = await fetch(url, {
+        method: 'DELETE',
+        credentials: 'include', // Include cookies for authentication
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data.error || 'Failed to delete job');
+      } else {
+        // Remove the deleted job from state by filtering it out
+        setJobs((prevJobs) => prevJobs.filter((job) => job.id !== id));
+      }
+    } catch (err) {
+      console.error('Error deleting job:', err);
+      setError('An unexpected error occurred');
+    }
+  };
+
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_URL}/jobs`)
       .then((response) => {
-        console.log('Response data:', response.data);
+        console.log('Response data:', response);
 
         let fetchedJobs = [];
 
-        // 1) Check if the API returns an array at response.data.jobs
+        // Check multiple possible structures of the API response
         if (Array.isArray(response.data.jobs)) {
           fetchedJobs = response.data.jobs;
-        }
-        // 2) Or if your API returns data in a "data" field
-        else if (Array.isArray(response.data.data)) {
+        } else if (Array.isArray(response.data.data)) {
           fetchedJobs = response.data.data;
-        }
-        // 3) Or if the entire response is already an array
-        else if (Array.isArray(response.data)) {
+        } else if (Array.isArray(response.data)) {
           fetchedJobs = response.data;
         } else {
-          // Handle unexpected structure
           console.warn('Unexpected response structure:', response.data);
         }
 
@@ -47,8 +72,9 @@ const JobIndexPage = () => {
     <>
       <Row className="mb-3">
         <Col>
-          <h5 className="d-inline-block me-3">Jobs / Index</h5>
-          <button className="btn btn-primary float-end">Create</button>
+          <Link to="/job/create">
+            <button className="btn btn-primary float-end">Create</button>
+          </Link>
         </Col>
       </Row>
 
@@ -76,10 +102,15 @@ const JobIndexPage = () => {
                       <td>{job.job_title}</td>
                       <td>{job.budget}</td>
                       <td>{job.bid_close}</td>
-                      <td>{job.organization_name || 'N/A'}</td>
+                      <td>{job.organization ? job.organization.organization_name : 'N/A'}</td>
                       <td>
-                        <button className="btn btn-warning btn-sm me-2">Edit</button>
-                        <button className="btn btn-danger btn-sm">Delete</button>
+                        <Link className="dropdown-item" to={`/job/edit/${job.id}`} state={{ job: job, jobId: job.id }}>
+                          <i className="fas fa-edit me-2"></i> Edit
+                        </Link>
+
+                        <button type="button" className="dropdown-item" onClick={() => handleDelete(job.id)}>
+                          <i className="fas fa-trash me-2"></i> Delete
+                        </button>
                       </td>
                     </tr>
                   ))}

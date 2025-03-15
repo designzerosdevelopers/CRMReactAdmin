@@ -1,25 +1,71 @@
-import React, { useState } from 'react';
-import PageTitle from '../components/PageTitle'; // Adjust the import path as needed
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // Added for navigation
+import { UserContext } from '../../contexts/UserContext';
+import { useContext } from 'react';
 
-const JobCreateForm = ({ errors = [], categories = [], degrees = [], orgId, onSubmit }) => {
-  // Set up state for each form field
-  const [jobTitle, setJobTitle] = useState("Learning Menagment System (LMS)");
-  const [address, setAddress] = useState("TRC Enterprice,Avanue Road, 3rd Block, Lahore");
-  const [categoryId, setCategoryId] = useState("");
-  const [degreeId, setDegreeId] = useState("");
-  const [zipcode, setZipcode] = useState("98766");
-  const [isRemote, setIsRemote] = useState("");
-  const [skill, setSkill] = useState("HTML, CSS, JS, Vue, Laravel, Php");
-  const [experience, setExperience] = useState("5");
-  const [budget, setBudget] = useState("8743");
-  const [bidClose, setBidClose] = useState("2023-03-09");
-  const [deadline, setDeadline] = useState("2023-03-09");
-  const [description, setDescription] = useState("The Learning System Application is For a University.");
+const JobCreateForm = ({ csrfToken, orgId }) => {
+  const { user, role, updateUser, updateRole } = useContext(UserContext);
 
-  const handleSubmit = (e) => {
+  const [jobTitle, setJobTitle] = useState('Learning Menagment System (LMS)');
+  const [address, setAddress] = useState('TRC Enterprice,Avanue Road, 3rd Block, Lahore');
+  const [categoryId, setCategoryId] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [degreeId, setDegreeId] = useState('');
+  const [degrees, setDegrees] = useState([]);
+  const [zipcode, setZipcode] = useState('98766');
+  const [isRemote, setIsRemote] = useState('');
+  const [skill, setSkill] = useState('HTML, CSS, JS, Vue, Laravel, Php');
+  const [experience, setExperience] = useState('5');
+  const [budget, setBudget] = useState('8743');
+  const [bidClose, setBidClose] = useState('2023-03-09');
+  const [deadline, setDeadline] = useState('2023-03-09');
+  const [description, setDescription] = useState('The Learning System Application is For a University.');
+  const [loading, setLoading] = useState(true);
+  const [errors, setErrors] = useState([]); // Local error state
+  const [success, setSuccess] = useState('');
+  const navigate = useNavigate(); // Navigation hook
+  const token = localStorage.getItem('auth_token');
+
+  // Fetch CSRF cookie on mount
+  useEffect(() => {
+    const getCsrfCookie = async () => {
+      await fetch(`${import.meta.env.VITE_API_URL}/sanctum/csrf-cookie`, {
+        credentials: 'include'
+      });
+    };
+    getCsrfCookie();
+  }, []);
+
+  // Fetch categories and degrees
+  useEffect(() => {
+    axios
+      .get(`${import.meta.env.VITE_API_URL}/data`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+          Authorization: `Bearer ${token}`
+        }
+      })
+      .then((response) => {
+        setCategories(response.data.categories || []);
+        setDegrees(response.data.degrees || []);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error fetching data:', error);
+        setLoading(false);
+      });
+  }, [csrfToken]); // Added csrfToken dependency
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setErrors([]);
+    setSuccess('');
 
-    // Build the form data object
+    console.log('user is', user);
+
     const formData = {
       job_title: jobTitle,
       address,
@@ -33,33 +79,68 @@ const JobCreateForm = ({ errors = [], categories = [], degrees = [], orgId, onSu
       bid_close: bidClose,
       deadline,
       description,
-      ...(orgId ? { creator: orgId } : {})
+      user: user,
+      user_role: role,
+      ...(orgId && { creator: orgId })
     };
 
-    // Call the onSubmit prop callback if provided; otherwise, log the data.
-    if (onSubmit) {
-      onSubmit(formData);
-    } else {
-      console.log("Form submitted:", formData);
-      // You can use fetch or axios here to post formData to your API.
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/job`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+          Authorization: `Bearer ${token}`
+        },
+        credentials: 'include',
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErrors(data.errors || ['Submission failed']);
+      } else {
+        setSuccess('Job created successfully');
+        // Reset form fields
+        setJobTitle('');
+        setAddress('');
+        setCategoryId('');
+        setDegreeId('');
+        setZipcode('');
+        setIsRemote('');
+        setSkill('');
+        setExperience('');
+        setBudget('');
+        setBidClose('');
+        setDeadline('');
+        setDescription('');
+        navigate('/job/index');
+      }
+    } catch (error) {
+      setErrors(['Network error. Please try again.']);
+    } finally {
+      setLoading(false);
     }
   };
 
+  if (loading) return <p>Loading...</p>;
+
   return (
     <div className="container-xxl flex-grow-1 container-p-y">
-      <PageTitle menu="Job" page="Create" />
-      
-      {/* Display errors if any */}
+      {/* Error messages */}
       {errors.length > 0 && (
         <div className="alert alert-danger">
-          <ul>
-            {errors.map((error, index) => (
-              <li key={index}>{error}</li>
-            ))}
-          </ul>
+          {errors.map((error, index) => (
+            <p key={index}>{error}</p>
+          ))}
         </div>
       )}
 
+      {/* Success message */}
+      {success && <div className="alert alert-success">{success}</div>}
+
+      {/* Rest of your form JSX remains the same */}
       <div className="row">
         <div className="col-xxl">
           <div className="card mb-4">
@@ -69,6 +150,7 @@ const JobCreateForm = ({ errors = [], categories = [], degrees = [], orgId, onSu
             </div>
             <div className="card-body">
               <form onSubmit={handleSubmit}>
+                {/* Job Title */}
                 <div className="row mb-3">
                   <label className="col-sm-2 col-form-label" htmlFor="jobTitle">
                     Job Title
@@ -84,6 +166,7 @@ const JobCreateForm = ({ errors = [], categories = [], degrees = [], orgId, onSu
                     />
                   </div>
                 </div>
+                {/* Address */}
                 <div className="row mb-3">
                   <label className="col-sm-2 col-form-label" htmlFor="address">
                     Address
@@ -99,6 +182,7 @@ const JobCreateForm = ({ errors = [], categories = [], degrees = [], orgId, onSu
                     />
                   </div>
                 </div>
+                {/* Category and Degree */}
                 <div className="row mb-3">
                   <label className="col-sm-2 col-form-label" htmlFor="category">
                     Job category
@@ -114,9 +198,9 @@ const JobCreateForm = ({ errors = [], categories = [], degrees = [], orgId, onSu
                       <option value="" disabled>
                         -- Select an option --
                       </option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.cat_name}
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.cat_name}
                         </option>
                       ))}
                     </select>
@@ -143,6 +227,7 @@ const JobCreateForm = ({ errors = [], categories = [], degrees = [], orgId, onSu
                     </select>
                   </div>
                 </div>
+                {/* Zip Code & Is Remote */}
                 <div className="row mb-3">
                   <label className="col-sm-2 col-form-label" htmlFor="zipcode">
                     Zip Code
@@ -179,6 +264,7 @@ const JobCreateForm = ({ errors = [], categories = [], degrees = [], orgId, onSu
                     </select>
                   </div>
                 </div>
+                {/* Skill */}
                 <div className="row mb-3">
                   <label className="col-sm-2 col-form-label" htmlFor="skill">
                     Required Skill
@@ -194,6 +280,7 @@ const JobCreateForm = ({ errors = [], categories = [], degrees = [], orgId, onSu
                     />
                   </div>
                 </div>
+                {/* Experience and Budget */}
                 <div className="row mb-3">
                   <label className="col-sm-2 col-form-label" htmlFor="experience">
                     Experience Years
@@ -222,6 +309,7 @@ const JobCreateForm = ({ errors = [], categories = [], degrees = [], orgId, onSu
                     />
                   </div>
                 </div>
+                {/* Bid Close and Deadline */}
                 <div className="row mb-3">
                   <label className="col-sm-2 col-form-label" htmlFor="bidClose">
                     Bid Closing
@@ -250,6 +338,7 @@ const JobCreateForm = ({ errors = [], categories = [], degrees = [], orgId, onSu
                     />
                   </div>
                 </div>
+                {/* Description */}
                 <div className="row mb-3">
                   <label className="col-sm-2 col-form-label" htmlFor="description">
                     Description

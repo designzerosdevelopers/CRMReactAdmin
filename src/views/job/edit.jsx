@@ -1,33 +1,85 @@
-import React, { useState } from 'react';
-import PageTitle from '../components/PageTitle'; // Adjust the path as needed
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // Added for navigation
 
-const JobEditForm = ({
-  job,
-  categories = [],
-  degrees = [],
-  orgId,
-  errors = [],
-  onSubmit,
-}) => {
-  // Initialize state with job properties
-  const [jobTitle, setJobTitle] = useState(job.job_title || '');
-  const [address, setAddress] = useState(job.address || '');
-  const [categoryId, setCategoryId] = useState(job.category_id || '');
-  const [degreeId, setDegreeId] = useState(job.degree_id || '');
-  const [zipcode, setZipcode] = useState(job.zipcode || '');
-  const [isRemote, setIsRemote] = useState(job.is_remote || '');
-  const [skill, setSkill] = useState(job.skill || '');
-  const [experience, setExperience] = useState(job.experience || '');
-  const [budget, setBudget] = useState(job.budget || '');
-  const [bidClose, setBidClose] = useState(job.bid_close || '');
-  const [deadline, setDeadline] = useState(job.deadline || '');
-  const [description, setDescription] = useState(job.description || '');
+const JobEditForm = ({ job, csrfToken, orgId, onSubmit }) => {
+  const { id } = useParams();
+  const token = localStorage.getItem('auth_token');
 
-  const handleSubmit = (e) => {
+  // Initialize state with job properties (using optional chaining)
+  const [jobTitle, setJobTitle] = useState(job?.job_title || '');
+  const [address, setAddress] = useState(job?.address || '');
+  const [categoryId, setCategoryId] = useState(job?.category_id || '');
+  const [degreeId, setDegreeId] = useState(job?.degree_id || '');
+  const [zipcode, setZipcode] = useState(job?.zipcode || '');
+  const [isRemote, setIsRemote] = useState(job?.is_remote || '');
+  const [skill, setSkill] = useState(job?.skill || '');
+  const [experience, setExperience] = useState(job?.experience || '');
+  const [budget, setBudget] = useState(job?.budget || '');
+  const [bidClose, setBidClose] = useState(job?.bid_close || '');
+  const [deadline, setDeadline] = useState(job?.deadline || '');
+  const [description, setDescription] = useState(job?.description || '');
+  const [categories, setCategories] = useState([]);
+  const [degrees, setDegrees] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState('');
+  const navigate = useNavigate(); // Navigation hook
+  const [errors, setErrors] = useState([]);
+  // const token = localStorage.getItem('auth_token');
+
+  // Fetch job details based on the id from the URL
+  useEffect(() => {
+    setLoading(true);
+    axios
+      .get(`${import.meta.env.VITE_API_URL}/job/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then((response) => {
+        const fetchedJob = response.data.job;
+        setJobTitle(fetchedJob.job_title || '');
+        setAddress(fetchedJob.address || '');
+        setCategoryId(fetchedJob.category_id || '');
+        setDegreeId(fetchedJob.degree_id || '');
+        setZipcode(fetchedJob.zipcode || '');
+        setIsRemote(fetchedJob.is_remote || '');
+        setSkill(fetchedJob.skill || '');
+        setExperience(fetchedJob.experience || '');
+        setBudget(fetchedJob.budget || '');
+        setBidClose(fetchedJob.bid_close || '');
+        setDeadline(fetchedJob.deadline || '');
+        setDescription(fetchedJob.description || '');
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Error fetching job data:', error);
+        setLoading(false);
+      });
+  }, [id, token]);
+
+  // Fetch categories and degrees
+  useEffect(() => {
+    axios
+      .get(`${import.meta.env.VITE_API_URL}/data`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+          Authorization: `Bearer ${token}`
+        }
+      })
+      .then((response) => {
+        setCategories(response.data.categories || []);
+        setDegrees(response.data.degrees || []);
+      })
+      .catch((error) => {
+        console.error('Error fetching data:', error);
+      });
+  }, [csrfToken, token]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Build the form data object
-    const formData = {
+    const updatedData = {
       job_title: jobTitle,
       address,
       category_id: categoryId,
@@ -40,22 +92,33 @@ const JobEditForm = ({
       bid_close: bidClose,
       deadline,
       description,
-      ...(orgId ? { creator: orgId } : {}),
+      ...(orgId ? { creator: orgId } : {})
     };
 
-    // Call the onSubmit callback if provided
-    if (onSubmit) {
-      onSubmit(formData);
-    } else {
-      console.log('Form submitted:', formData);
-      // Alternatively, perform an API call using fetch/axios here.
+    try {
+      const response = await axios.put(`${import.meta.env.VITE_API_URL}/job/${id}`, updatedData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.status === (200 || 201) && response.data.success) {
+        setSuccess(response.data.message || 'Job updated successfully');
+        navigate('/job/index');
+      } else {
+        setErrors(response.data.errors || ['Submission failed']);
+      }
+    } catch (error) {
+      console.error('Error updating job:', error.response?.data);
+      setErrors(error.response?.data?.errors || ['An unexpected error occurred']);
     }
   };
 
+  if (loading) return <p>Loading...</p>;
+
   return (
     <div className="container-xxl flex-grow-1 container-p-y">
-      <PageTitle menu="job" page="Edit" />
-
       {errors.length > 0 && (
         <div className="alert alert-danger">
           <ul>
@@ -65,22 +128,21 @@ const JobEditForm = ({
           </ul>
         </div>
       )}
+      {/* Success message */}
+      {success && <div className="alert alert-success">{success}</div>}
 
       <div className="row">
         <div className="col-xxl">
           <div className="card mb-4">
             <div className="card-header d-flex align-items-center justify-content-between">
-              <h5 className="mb-0">Create Form</h5>
+              <h5 className="mb-0">Edit Job</h5>
               <small className="text-muted float-end">Fill all the fields</small>
             </div>
             <div className="card-body">
               <form onSubmit={handleSubmit}>
                 {/* Job Title */}
                 <div className="row mb-3">
-                  <label
-                    className="col-sm-2 col-form-label"
-                    htmlFor="jobTitle"
-                  >
+                  <label className="col-sm-2 col-form-label" htmlFor="jobTitle">
                     Job Title
                   </label>
                   <div className="col-sm-10">
@@ -96,10 +158,7 @@ const JobEditForm = ({
                 </div>
                 {/* Address */}
                 <div className="row mb-3">
-                  <label
-                    className="col-sm-2 col-form-label"
-                    htmlFor="address"
-                  >
+                  <label className="col-sm-2 col-form-label" htmlFor="address">
                     Address
                   </label>
                   <div className="col-sm-10">
@@ -113,13 +172,10 @@ const JobEditForm = ({
                     />
                   </div>
                 </div>
-                {/* Job category and Degree */}
+                {/* Job Category and Degree */}
                 <div className="row mb-3">
-                  <label
-                    className="col-sm-2 col-form-label"
-                    htmlFor="category"
-                  >
-                    Job category
+                  <label className="col-sm-2 col-form-label" htmlFor="category">
+                    Job Category
                   </label>
                   <div className="col-sm-4">
                     <select
@@ -129,25 +185,17 @@ const JobEditForm = ({
                       value={categoryId}
                       onChange={(e) => setCategoryId(e.target.value)}
                     >
-                      {/* Optionally display the current category first */}
-                      {job.category_id && (
-                        <option value={job.category_id}>
-                          {categories.find(
-                            (cat) => cat.id === job.category_id
-                          )?.cat_name || ''}
-                        </option>
-                      )}
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.cat_name}
+                      <option value="" disabled>
+                        -- Select an option --
+                      </option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.cat_name}
                         </option>
                       ))}
                     </select>
                   </div>
-                  <label
-                    className="col-sm-2 col-form-label"
-                    htmlFor="degree"
-                  >
+                  <label className="col-sm-2 col-form-label" htmlFor="degree">
                     Degree
                   </label>
                   <div className="col-sm-4">
@@ -158,13 +206,9 @@ const JobEditForm = ({
                       value={degreeId}
                       onChange={(e) => setDegreeId(e.target.value)}
                     >
-                      {job.degree_id && (
-                        <option value={job.degree_id}>
-                          {degrees.find(
-                            (deg) => deg.id === job.degree_id
-                          )?.degree_title || ''}
-                        </option>
-                      )}
+                      <option value="" disabled>
+                        -- Select an option --
+                      </option>
                       {degrees.map((degree) => (
                         <option key={degree.id} value={degree.id}>
                           {degree.degree_title}
@@ -175,10 +219,7 @@ const JobEditForm = ({
                 </div>
                 {/* Zip Code and Is Remote */}
                 <div className="row mb-3">
-                  <label
-                    className="col-sm-2 col-form-label"
-                    htmlFor="zipcode"
-                  >
+                  <label className="col-sm-2 col-form-label" htmlFor="zipcode">
                     Zip Code
                   </label>
                   <div className="col-sm-4">
@@ -202,6 +243,9 @@ const JobEditForm = ({
                       value={isRemote}
                       onChange={(e) => setIsRemote(e.target.value)}
                     >
+                      <option value="" disabled>
+                        -- Select an option --
+                      </option>
                       <option value="Remote">Remote</option>
                       <option value="On-site">On-site</option>
                       <option value="Hybrid">Hybrid</option>
@@ -210,10 +254,7 @@ const JobEditForm = ({
                 </div>
                 {/* Required Skill */}
                 <div className="row mb-3">
-                  <label
-                    className="col-sm-2 col-form-label"
-                    htmlFor="skill"
-                  >
+                  <label className="col-sm-2 col-form-label" htmlFor="skill">
                     Required Skill
                   </label>
                   <div className="col-sm-10">
@@ -229,11 +270,8 @@ const JobEditForm = ({
                 </div>
                 {/* Experience Years */}
                 <div className="row mb-3">
-                  <label
-                    className="col-sm-2 col-form-label"
-                    htmlFor="experience"
-                  >
-                    Experience years
+                  <label className="col-sm-2 col-form-label" htmlFor="experience">
+                    Experience Years
                   </label>
                   <div className="col-sm-10">
                     <input
@@ -248,10 +286,7 @@ const JobEditForm = ({
                 </div>
                 {/* Budget */}
                 <div className="row mb-3">
-                  <label
-                    className="col-sm-2 col-form-label"
-                    htmlFor="budget"
-                  >
+                  <label className="col-sm-2 col-form-label" htmlFor="budget">
                     Budget
                   </label>
                   <div className="col-sm-10">
@@ -267,10 +302,7 @@ const JobEditForm = ({
                 </div>
                 {/* Bid Closing and Deadline */}
                 <div className="row mb-3">
-                  <label
-                    className="col-sm-2 col-form-label"
-                    htmlFor="bidClose"
-                  >
+                  <label className="col-sm-2 col-form-label" htmlFor="bidClose">
                     Bid Closing
                   </label>
                   <div className="col-sm-4">
@@ -283,10 +315,7 @@ const JobEditForm = ({
                       onChange={(e) => setBidClose(e.target.value)}
                     />
                   </div>
-                  <label
-                    className="col-sm-2 col-form-label"
-                    htmlFor="deadline"
-                  >
+                  <label className="col-sm-2 col-form-label" htmlFor="deadline">
                     Deadline
                   </label>
                   <div className="col-sm-4">
@@ -302,10 +331,7 @@ const JobEditForm = ({
                 </div>
                 {/* Description */}
                 <div className="row mb-3">
-                  <label
-                    className="col-sm-2 col-form-label"
-                    htmlFor="description"
-                  >
+                  <label className="col-sm-2 col-form-label" htmlFor="description">
                     Description
                   </label>
                   <div className="col-sm-10">
@@ -320,9 +346,7 @@ const JobEditForm = ({
                     />
                   </div>
                 </div>
-                {orgId && (
-                  <input type="hidden" name="creator" value={orgId} />
-                )}
+                {orgId && <input type="hidden" name="creator" value={orgId} />}
                 <div className="row justify-content-end">
                   <div className="col-sm-10">
                     <button type="submit" className="btn btn-primary">
