@@ -1,6 +1,7 @@
 {
-  "name": "datta-able-react-hook-reactstrap-js",
+
   "version": "3.0.0",
+    "homepage": ".",
   "private": true,
   "scripts": {
     "start": "vite",
