@@ -1,6 +1,7 @@
 {
-  "name": "datta-able-react-hook-reactstrap-js",
+
   "version": "3.0.0",
+    "homepage": ".",
   "private": true,
   "scripts": {
     "start": "vite",
@@ -26,7 +27,6 @@
     "formik": "^2.4.5",
     "jquery": "^3.7.1",
     "lucide-react": "^0.475.0",
-    "mdb-react-ui-kit": "^9.0.0",
     "process": "^0.11.10",
     "react": "^18.2.0",
     "react-bootstrap": "^2.10.2",

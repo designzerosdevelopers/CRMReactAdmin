@@ -1,50 +1,43 @@
-import React, { useState, useEffect, useContext, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ListGroup } from 'react-bootstrap';
 import { Link, useLocation } from 'react-router-dom';
-import getMenuItems from '../../../menu-items';
-import { UserContext } from '../../../contexts/UserContext';
+
+import navigation from '../../../menu-items';
 import { BASE_TITLE } from '../../../config/constant';
 
 const Breadcrumb = () => {
   const location = useLocation();
-  const { role } = useContext(UserContext);
 
-  // Memoize navigation so it only recalculates when role changes
-  const navigation = useMemo(() => getMenuItems(role), [role]);
-
-  const [main, setMain] = useState(null);
-  const [item, setItem] = useState(null);
+  const [main, setMain] = useState([]);
+  const [item, setItem] = useState([]);
 
   useEffect(() => {
-    if (navigation && navigation.items) {
-      navigation.items.forEach((navItem) => {
-        if (navItem.type === 'group') {
-          getCollapse(navItem);
-        }
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigation, location.pathname]); // only run when navigation or pathname changes
+    navigation.items.map((item, index) => {
+      if (item.type && item.type === 'group') {
+        getCollapse(item, index);
+      }
+      return false;
+    });
+  });
 
-  const getCollapse = (navItem) => {
-    if (navItem.children) {
-      navItem.children.forEach((child) => {
-        if (child.type === 'collapse') {
-          getCollapse(child);
-        } else if (child.type === 'item') {
-          if (location.pathname === child.url) {
-            // Only update state if the values have actually changed
-            if (main !== navItem) setMain(navItem);
-            if (item !== child) setItem(child);
+  const getCollapse = (item, index) => {
+    if (item.children) {
+      item.children.filter((collapse) => {
+        if (collapse.type && collapse.type === 'collapse') {
+          getCollapse(collapse, index);
+        } else if (collapse.type && collapse.type === 'item') {
+          if (location.pathname === collapse.url) {
+            setMain(item);
+            setItem(collapse);
           }
         }
+        return false;
       });
     }
   };
 
-  let mainContent = null;
-  let itemContent = null;
-  let breadcrumbContent = null;
+  let mainContent, itemContent;
+  let breadcrumbContent = '';
   let title = '';
 
   if (main && main.type === 'collapse') {
@@ -91,7 +84,7 @@ const Breadcrumb = () => {
     document.title = title + BASE_TITLE;
   }
 
-  return <>{breadcrumbContent}</>;
+  return <React.Fragment>{breadcrumbContent}</React.Fragment>;
 };
 
 export default Breadcrumb;

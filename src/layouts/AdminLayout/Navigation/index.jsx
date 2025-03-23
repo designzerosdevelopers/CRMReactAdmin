@@ -1,36 +1,48 @@
-import React, { useContext, useMemo } from 'react';
+import React, { useContext } from 'react';
+
 import { ConfigContext } from '../../../contexts/ConfigContext';
-import { UserContext } from '../../../contexts/UserContext';
 import useWindowSize from '../../../hooks/useWindowSize';
+
 import NavLogo from './NavLogo';
 import NavContent from './NavContent';
-import getMenuItems from '../../../menu-items';
+import navigation from '../../../menu-items';
 
-const NavigationComponent = () => {
-  const {
-    state: { collapseMenu }
-  } = useContext(ConfigContext);
+const Navigation = () => {
+  const configContext = useContext(ConfigContext);
+  const { collapseMenu } = configContext.state;
   const windowSize = useWindowSize();
-  const { role } = useContext(UserContext);
 
-  // Compute the navigation menu only when role changes.
-  const navigation = useMemo(() => getMenuItems(role), [role]);
+  let navClass = ['pcoded-navbar'];
 
-  const navClass = ['pcoded-navbar'];
+  navClass = [...navClass];
+
   if (windowSize.width < 992 && collapseMenu) {
-    navClass.push('mob-open');
+    navClass = [...navClass, 'mob-open'];
   } else if (collapseMenu) {
-    navClass.push('navbar-collapsed');
+    navClass = [...navClass, 'navbar-collapsed'];
   }
 
-  return (
-    <nav className={navClass.join(' ')}>
+  let navBarClass = ['navbar-wrapper'];
+
+  let navContent = (
+    <div className={navBarClass.join(' ')}>
+      <NavLogo />
+      <NavContent navigation={navigation.items} />
+    </div>
+  );
+  if (windowSize.width < 992) {
+    navContent = (
       <div className="navbar-wrapper">
         <NavLogo />
         <NavContent navigation={navigation.items} />
       </div>
-    </nav>
+    );
+  }
+  return (
+    <React.Fragment>
+      <nav className={navClass.join(' ')}>{navContent}</nav>
+    </React.Fragment>
   );
 };
 
-export default NavigationComponent;
+export default Navigation;

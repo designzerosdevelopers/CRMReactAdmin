@@ -8,39 +8,35 @@ import chatMsg from './chat';
 import Messages from './Messages';
 
 const Chat = ({ user, chatOpen, listOpen, closed }) => {
-  // Conditionally add 'open' class if chatOpen and listOpen are true
   let chatClass = ['header-chat'];
   if (chatOpen && listOpen) {
-    chatClass.push('open');
+    chatClass = [...chatClass, 'open'];
   }
 
-  // Default message if no matching chats are found or if user is null
   let message = (
     <Card className="d-flex align-items-center shadow-none mb-0 p-0" style={{ flexDirection: 'row', backgroundColor: 'unset' }}>
       <Card.Body className="p-0 chat-menu-content">
-        <div>
+        <div className="">
           <p className="chat-cont">CHAT NOT FOUND</p>
         </div>
       </Card.Body>
     </Card>
   );
 
-  // Only filter through chatMsg if we have a valid user with an id
-  if (user && user.id) {
-    chatMsg.filter((chats) => {
-      if (chats.friend_id === user.id) {
-        // Build the message array if there's a matching friend_id
-        message = chats.messages.map((msg, index) => <Messages key={index} message={msg} name={user.name} photo={chats.friend_photo} />);
-      }
-      return false; // filter callback expects a boolean
-    });
-  }
+  chatMsg.filter((chats) => {
+    if (chats.friend_id === user.id) {
+      message = chats.messages.map((msg, index) => {
+        return <Messages key={index} message={msg} name={user.name} photo={chats.friend_photo} />;
+      });
+    }
+    return false;
+  });
 
   return (
-    <>
+    <React.Fragment>
       <div className={chatClass.join(' ')}>
         <div className="h-list-header">
-          <h6>{user && user.name ? user.name : 'No user selected'}</h6>
+          <h6>{user.name}</h6>
           <Link to="#" className="h-back-user-list" onClick={closed}>
             <i className="feather icon-chevron-left text-muted" />
           </Link>
@@ -57,14 +53,14 @@ const Chat = ({ user, chatOpen, listOpen, closed }) => {
             <Button variant="success" className="btn-attach">
               <i className="feather icon-paperclip" />
             </Button>
-            <FormControl type="text" name="h-chat-text" className="h-send-chat" placeholder="Write here..." />
+            <FormControl type="text" name="h-chat-text" className="h-send-chat" placeholder="Write hear . . " />
             <Button type="submit" className="input-group-append btn-send">
               <i className="feather icon-message-circle" />
             </Button>
           </InputGroup>
         </div>
       </div>
-    </>
+    </React.Fragment>
   );
 };
 

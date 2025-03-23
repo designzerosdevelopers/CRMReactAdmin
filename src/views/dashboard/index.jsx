@@ -13,165 +13,268 @@ import {
   Legend,
   ArcElement
 } from 'chart.js';
+import { Icon } from 'lucide-react'; // Remove if not needed
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, ArcElement);
 
-// Avatar Component
+// Simple Avatar (just an emoji here)
 const Avatar = ({ style }) => (
   <div
     style={{
-      width: 50,
-      height: 50,
-      backgroundColor: '#f8f9fa',
+      width: 40,
+      height: 40,
+      backgroundColor: '#e2e3e5',
       borderRadius: '50%',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
       ...style
     }}
   >
-    <span role="img" aria-label="avatar" style={{ fontSize: '24px' }}>
+    <span role="img" aria-label="avatar">
       👤
     </span>
   </div>
 );
 
 const DashDefault = () => {
+  // Compute welcome message based on role
   const role = localStorage.getItem('role');
-  const roleMessages = {
-    'super-admin': 'Super Admin Dashboard 🚀',
-    organization: 'Organization Dashboard 📊',
-    user: 'User Dashboard 🎯'
-  };
-  const welcomeMessage = roleMessages[role] || 'Welcome to the Dashboard! 🚀';
+  let welcomeMessage = '';
+  if (role === 'super-admin') {
+    welcomeMessage = 'Super Admin Dashboard! 🚀';
+  } else if (role === 'organization') {
+    welcomeMessage = 'Organization Dashboard! 🚀';
+  } else {
+    welcomeMessage = 'Dashboard! 🚀';
+  }
 
-  // Chart Components
-  const ChartWrapper = ({ children }) => <div style={{ height: 200, padding: '10px' }}>{children}</div>;
+  // Chart Components defined locally within DashDefault
+  const LineChart = ({ data }) => (
+    <div style={{ height: 200 }}>
+      <Line
+        data={{
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [
+            {
+              data,
+              label: 'Sales',
+              borderColor: 'rgba(13,110,253,0.7)', // .text-primary
+              fill: false,
+              tension: 0.3
+            }
+          ]
+        }}
+        options={{ responsive: true, maintainAspectRatio: false }}
+      />
+    </div>
+  );
 
-  const lineChartData = [50, 60, 45, 80, 60, 55];
-  const barChartData = [12, 19, 10, 15, 9, 13];
-  const doughnutData = [76, 24];
+  const BarChart = ({ data }) => (
+    <div style={{ height: 200 }}>
+      <Bar
+        data={{
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [
+            {
+              data,
+              label: 'Revenue',
+              backgroundColor: 'rgba(25,135,84,0.7)' // .text-success
+            }
+          ]
+        }}
+        options={{ responsive: true, maintainAspectRatio: false }}
+      />
+    </div>
+  );
+
+  const DoughnutChart = ({ data, labels }) => (
+    <div style={{ width: 200, margin: '0 auto' }}>
+      <Doughnut
+        data={{
+          labels: labels || ['A', 'B', 'C', 'D', 'E'],
+          datasets: [
+            {
+              data,
+              backgroundColor: ['#0d6efd', '#6f42c1', '#d63384', '#fd7e14', '#198754']
+            }
+          ]
+        }}
+        options={{ cutout: '70%' }}
+      />
+    </div>
+  );
 
   return (
     <div className="container-fluid py-4">
       {/* Header Section */}
       <Row className="mb-4">
-        {/* Left Column - Dashboard Header & Stats Cards */}
+        {/* LEFT COLUMN: Dashboard Header + Total Revenue */}
         <Col md={8}>
-          {/* Main Dashboard Card */}
-          <Card className="shadow-sm border-0">
+          {/* Dashboard Header Card */}
+          <Card className="shadow-sm mb-3">
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <h1 className="fw-bold">{welcomeMessage}</h1>
-                  <p className="text-muted">
-                    You have achieved <span className="text-primary fw-semibold">72%</span> of your monthly goals. Keep going! 💪
+                  <h1 className="h4 fw-bold">{welcomeMessage}</h1>
+                  <p className="text-muted mb-0">
+                    You have done <span className="text-primary fw-semibold">72%</span> more sales today. Check your new badge in your profile.
                   </p>
                 </div>
-                <Avatar />
+                <Avatar style={{ width: '48px', height: '48px' }} />
               </div>
             </Card.Body>
           </Card>
 
-          {/* Small Stats Cards Below Dashboard Header */}
-          <Row className="mt-3 g-3">
-            {[
-              { title: 'Profit', value: '$12,628', color: 'text-success' },
-              { title: 'Sales', value: '$4,679', color: 'text-primary' },
-              { title: 'Payments', value: '$2,456', color: 'text-info' },
-              { title: 'Transactions', value: '$14,857', color: 'text-warning' }
-            ].map((stat, index) => (
-              <Col md={3} key={index}>
-                <Card className="shadow-sm border-0 text-center">
-                  <Card.Body>
-                    <h6 className="fw-semibold">{stat.title}</h6>
-                    <h2 className={`${stat.color} fw-bold`}>{stat.value}</h2>
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))}
+          {/* Total Revenue Card */}
+          <Card className="shadow-sm">
+            <Card.Body>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h5 className="fw-semibold mb-0">Total Revenue</h5>
+                  <div>
+                    <Button variant="outline-primary" size="sm" className="me-1">
+                      2021
+                    </Button>
+                    <Button variant="outline-secondary" size="sm" className="me-1">
+                      2022
+                    </Button>
+                    <Button variant="outline-secondary" size="sm">
+                      2023
+                    </Button>
+                  </div>
+                  <BarChart data={[12, 19, 3, 5, 2, 3]} />
+                </div>
+                <div>
+                  <h5 className="fw-semibold">Growth</h5>
+                  <div className="my-3 text-center">
+                    <DoughnutChart data={[76, 24]} labels={['Growth', 'Remaining']} />
+                    <div className="mt-2">
+                      <span className="fw-bold text-success fs-4">76%</span>
+                      <p className="text-muted mb-0">Company Growth</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        {/* RIGHT COLUMN: Counts (Profit, Sales, Payments, Transactions) */}
+        <Col md={4}>
+          <Row className="g-3">
+            <Col md={6}>
+              <Card className="shadow-sm">
+                <Card.Body>
+                  <h5 className="fw-semibold">Profit</h5>
+                  <h2 className="text-success">$12,628</h2>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col md={6}>
+              <Card className="shadow-sm">
+                <Card.Body>
+                  <h5 className="fw-semibold">Sales</h5>
+                  <h2 className="text-primary">$4,679</h2>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col md={6}>
+              <Card className="shadow-sm">
+                <Card.Body>
+                  <h5 className="fw-semibold">Payments</h5>
+                  <h2 className="text-info">$2,456</h2>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col md={6}>
+              <Card className="shadow-sm">
+                <Card.Body>
+                  <h5 className="fw-semibold">Transactions</h5>
+                  <h2 className="text-warning">$14,857</h2>
+                </Card.Body>
+              </Card>
+            </Col>
           </Row>
         </Col>
+      </Row>
 
-        {/* Right Column - Growth Chart */}
-        <Col md={4}>
-          <Card className="shadow-sm border-0">
-            <Card.Body className="text-center">
-              <h5 className="fw-semibold">Growth</h5>
-              <Doughnut
-                data={{
-                  labels: ['Growth', 'Remaining'],
-                  datasets: [{ data: doughnutData, backgroundColor: ['#198754', '#e2e3e5'] }]
-                }}
-                options={{ cutout: '70%' }}
-              />
-              <p className="text-success mt-3 fs-4 fw-bold">76%</p>
-              <p className="text-muted">Company Growth</p>
+      {/* Other rows for charts, statistics, transactions, etc. */}
+      <Row className="mb-4 g-3">
+        <Col md={3}>
+          <Card className="shadow-sm">
+            <Card.Body>
+              <h5 className="fw-semibold">Order Statistics</h5>
+              <h2>8,258</h2>
+              <p className="text-muted">38% Returning</p>
+              <DoughnutChart data={[38, 22, 16, 10, 14]} />
             </Card.Body>
           </Card>
         </Col>
-      </Row>
 
-      {/* Revenue & Sales Charts */}
-      <Row className="mb-4">
-        <Col md={6}>
-          <Card className="shadow-sm border-0">
+        <Col md={3}>
+          <Card className="shadow-sm">
             <Card.Body>
-              <h5 className="fw-semibold">Total Revenue</h5>
-              <ChartWrapper>
-                <Bar
-                  data={{
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{ data: barChartData, backgroundColor: 'rgba(25,135,84,0.7)' }]
-                  }}
-                  options={{ responsive: true, maintainAspectRatio: false }}
-                />
-              </ChartWrapper>
+              <h5 className="fw-semibold">Profile Report</h5>
+              <h2 className="text-warning">$84,686K</h2>
+              <LineChart data={[50, 60, 70, 80, 60, 50]} />
             </Card.Body>
           </Card>
         </Col>
 
         <Col md={6}>
-          <Card className="shadow-sm border-0">
+          <Card className="shadow-sm">
             <Card.Body>
-              <h5 className="fw-semibold">Income vs Expenses</h5>
-              <ChartWrapper>
-                <Line
-                  data={{
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{ data: lineChartData, borderColor: '#0d6efd', fill: false, tension: 0.3 }]
-                  }}
-                  options={{ responsive: true, maintainAspectRatio: false }}
-                />
-              </ChartWrapper>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="fw-semibold mb-0">Income vs Expenses</h5>
+                <div>
+                  <Button variant="outline-primary" size="sm" className="me-1">
+                    Income
+                  </Button>
+                  <Button variant="outline-secondary" size="sm" className="me-1">
+                    Expenses
+                  </Button>
+                  <Button variant="outline-secondary" size="sm">
+                    Profit
+                  </Button>
+                </div>
+              </div>
+              <LineChart data={[45, 50, 40, 55, 60, 48]} />
+              <p className="text-muted mt-2 mb-0">
+                Expenses This Week: <span className="fw-semibold">$46.8k</span>
+              </p>
             </Card.Body>
           </Card>
         </Col>
       </Row>
 
-      {/* Quick Stats */}
-
-      {/* Transactions List */}
       <Row>
         <Col md={12}>
-          <Card className="shadow-sm border-0">
+          <Card className="shadow-sm">
             <Card.Body>
-              <h5 className="fw-semibold">Recent Transactions</h5>
+              <h5 className="fw-semibold">Transactions</h5>
               <ul className="list-unstyled mt-3">
-                {[
-                  { label: 'Send Money', amount: '-$492.6', color: 'text-danger' },
-                  { label: 'Wallet Transfer', amount: '-$678.9', color: 'text-danger' },
-                  { label: 'Starbucks', amount: '-$426.3', color: 'text-danger' },
-                  { label: 'Amazon Refund', amount: '+$320.0', color: 'text-success' },
-                  { label: 'Received Payment', amount: '+$512.4', color: 'text-success' }
-                ].map((transaction, index) => (
-                  <li key={index} className="d-flex justify-content-between border-bottom py-2">
-                    <span>{transaction.label}</span>
-                    <span className={transaction.color}>{transaction.amount}</span>
-                  </li>
-                ))}
+                <li className="d-flex justify-content-between border-bottom py-2">
+                  <span>Send Money</span>
+                  <span className="text-danger">-492.6 USD</span>
+                </li>
+                <li className="d-flex justify-content-between border-bottom py-2">
+                  <span>Wallet</span>
+                  <span className="text-danger">-678.9 USD</span>
+                </li>
+                <li className="d-flex justify-content-between border-bottom py-2">
+                  <span>Starbucks</span>
+                  <span className="text-danger">-426.3 USD</span>
+                </li>
+                <li className="d-flex justify-content-between border-bottom py-2">
+                  <span>Amazon</span>
+                  <span className="text-success">+320.0 USD</span>
+                </li>
+                <li className="d-flex justify-content-between py-2">
+                  <span>Received Payment</span>
+                  <span className="text-success">+512.4 USD</span>
+                </li>
               </ul>
             </Card.Body>
           </Card>

@@ -29,7 +29,9 @@ export const renderRoutes = (routes = []) => (
             path={route.path}
             element={
               <Guard>
-                <Layout>{route.routes ? renderRoutes(route.routes) : <Element props={true} />}</Layout>
+                <Layout>
+                  {route.routes ? renderRoutes(route.routes) : <Element props={true} />}
+                </Layout>
               </Guard>
             }
           />
@@ -61,11 +63,6 @@ const routes = [
     exact: 'true',
     path: '/auth/signup-1',
     element: lazy(() => import('./views/auth/signup/SignUp1'))
-  },
-  {
-    exact: 'true',
-    path: '/accept-invitation/:token',
-    element: lazy(() => import('./views/invite/reg-invitation'))
   },
   // Protected Routes
   {
@@ -140,88 +137,24 @@ const routes = [
       },
       {
         exact: 'true',
-        path: '/employee/create',
-        element: lazy(() => import('./views/employee/create'))
-      },
-      {
-        exact: 'true',
-        path: '/employee/show/:id',
-        element: lazy(() => import('./views/employee/show'))
-      },
-      {
-        exact: 'true',
-        path: '/employee/edit/:id',
-        element: lazy(() => import('./views/employee/edit'))
-      },
-      {
-        exact: 'true',
         path: '/organization/index',
         element: lazy(() => import('./views/organization/index'))
-      },
-      {
-        exact: 'true',
-        path: '/organization/create',
-        element: lazy(() => import('./views/organization/create'))
-      },
-      {
-        exact: 'true',
-        path: '/organization/show/:id',
-        element: lazy(() => import('./views/organization/show'))
-      },
-      {
-        exact: 'true',
-        path: '/organization/edit/:id',
-        element: lazy(() => import('./views/organization/edit'))
-      },
-     
-      {
-        exact: 'true',
-        path: '/organization/show/:id',
-        element: lazy(() => import('./views/job/show'))
-      },
-      {
-        exact: 'true',
-        path: '/organization/edit/:id',
-        element: lazy(() => import('./views/job/edit'))
-      },
-      {
-        exact: 'true',
-        path: '/categories/index',
-        element: lazy(() => import('./views/categories/index'))
-      },
-
-      {
-        exact: 'true',
-        path: '/categories/create',
-        element: lazy(() => import('./views/categories/create'))
-      },
-      {
-        exact: 'true',
-        path: '/categories/edit/:id',
-        element: lazy(() => import('./views/categories/edit'))
       },
       {
         exact: 'true',
         path: '/job/index',
         element: lazy(() => import('./views/job/index'))
       },
-
       {
         exact: 'true',
-        path: '/job/create',
-        element: lazy(() => import('./views/job/create'))
-      },
-      {
-        exact: 'true',
-        path: '/job/edit/:id',
-        element: lazy(() => import('./views/job/edit'))
+        path: '/categories/index',
+        element: lazy(() => import('./views/categories/index'))
       },
       {
         exact: 'true',
         path: '/invite',
         element: lazy(() => import('./views/invite/index'))
       },
-
       {
         exact: 'true',
         path: '/user-permission/select-user',
