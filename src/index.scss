@@ -1,4 +1,6 @@
-@import 'assets/scss/style.scss';
+
+@use 'assets/scss/style';
+
 
 .nav-outside.mob-backdrop {
   &.mob-fixed .pcoded-navbar {
