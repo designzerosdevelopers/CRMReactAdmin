@@ -1,217 +1,119 @@
-import React from 'react';
-import PageTitle from '../components/PageTitle'; // Adjust the import path as needed
+import axios from "axios";
+import {
+    MDBCard,
+    MDBCardBody,
+    MDBCardText,
+    MDBCol,
+    MDBContainer,
+    MDBRow,
+    MDBTypography
+} from "mdb-react-ui-kit";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 
-const JobViewForm = ({ job }) => {
+const JobView = () => {
+  const { id } = useParams();
+  const [job, setJob] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    axios
+      .get(`${import.meta.env.VITE_API_URL}/job/${id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+      })
+      .then((response) => {
+        console.log("Job details:", response.data);
+        setJob(response.data?.data || response.data); // Adjust based on API response
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("API error:", err);
+        setError(err.response?.data?.message || "Error fetching job data");
+        setLoading(false);
+      });
+  }, [id]);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
+  if (!job) return <div>No job data available for ID: {id}</div>;
+
   return (
-    <div className="container-xxl flex-grow-1 container-p-y">
-      <PageTitle menu="Job" page="View" />
-      <div className="row">
-        <div className="col-xxl">
-          <div className="card mb-4">
-            <div className="card-header d-flex align-items-center justify-content-between">
-              <h5 className="mb-0">View Form</h5>
-              <small className="text-muted float-end">View all the fields</small>
-            </div>
-            <div className="card-body">
-              {/* Job Title */}
-              <div className="row mb-3">
-                <label
-                  className="col-sm-2 col-form-label"
-                  htmlFor="jobTitle"
-                >
-                  Job Title
-                </label>
-                <div className="col-sm-10">
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="jobTitle"
-                    value={job.job_title}
-                    readOnly
-                  />
-                </div>
-              </div>
-              {/* Address */}
-              <div className="row mb-3">
-                <label
-                  className="col-sm-2 col-form-label"
-                  htmlFor="address"
-                >
-                  Address
-                </label>
-                <div className="col-sm-10">
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="address"
-                    value={job.address}
-                    readOnly
-                  />
-                </div>
-              </div>
-              {/* Zip Code & Job Type */}
-              <div className="row mb-3">
-                <label
-                  className="col-sm-2 col-form-label"
-                  htmlFor="zipcode"
-                >
-                  Zip Code
-                </label>
-                <div className="col-sm-4">
-                  <input
-                    type="number"
-                    className="form-control"
-                    id="zipcode"
-                    value={job.zipcode}
-                    readOnly
-                  />
-                </div>
-                <div className="col-sm-2 offset-sm-1">
-                  <label
-                    className="col-form-label"
-                    htmlFor="jobType"
-                  >
-                    Job Type
-                  </label>
-                </div>
-                <div className="col-sm-3">
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="jobType"
-                    value={job.is_remote}
-                    readOnly
-                  />
-                </div>
-              </div>
-              {/* Required Skill */}
-              <div className="row mb-3">
-                <label
-                  className="col-sm-2 col-form-label"
-                  htmlFor="skill"
-                >
-                  Required Skill
-                </label>
-                <div className="col-sm-10">
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="skill"
-                    value={job.skill}
-                    readOnly
-                  />
-                </div>
-              </div>
-              {/* Required Experience */}
-              <div className="row mb-3">
-                <label
-                  className="col-sm-2 col-form-label"
-                  htmlFor="experience"
-                >
-                  Required Experience
-                </label>
-                <div className="col-sm-10">
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="experience"
-                    value={job.experience}
-                    readOnly
-                  />
-                </div>
-              </div>
-              {/* Required Education */}
-              <div className="row mb-3">
-                <label
-                  className="col-sm-2 col-form-label"
-                  htmlFor="education"
-                >
-                  Required Education
-                </label>
-                <div className="col-sm-10">
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="education"
-                    value={job.education}
-                    readOnly
-                  />
-                </div>
-              </div>
-              {/* Budget */}
-              <div className="row mb-3">
-                <label
-                  className="col-sm-2 col-form-label"
-                  htmlFor="budget"
-                >
-                  Budget
-                </label>
-                <div className="col-sm-10">
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="budget"
-                    value={job.budget}
-                    readOnly
-                  />
-                </div>
-              </div>
-              {/* Bid Closing & Deadline */}
-              <div className="row mb-3">
-                <label
-                  className="col-sm-2 col-form-label"
-                  htmlFor="bidClose"
-                >
-                  Bid Closing
-                </label>
-                <div className="col-sm-4">
-                  <input
-                    type="date"
-                    className="form-control"
-                    id="bidClose"
-                    value={job.bid_close}
-                    readOnly
-                  />
-                </div>
-                <label
-                  className="col-sm-2 col-form-label"
-                  htmlFor="deadline"
-                >
-                  Deadline
-                </label>
-                <div className="col-sm-4">
-                  <input
-                    type="date"
-                    className="form-control"
-                    id="deadline"
-                    value={job.deadline}
-                    readOnly
-                  />
-                </div>
-              </div>
-              {/* Description */}
-              <div className="row mb-3">
-                <label
-                  className="col-sm-2 col-form-label"
-                  htmlFor="description"
-                >
-                  Description
-                </label>
-                <div className="col-sm-10">
-                  <textarea
-                    className="form-control"
-                    id="description"
-                    value={job.description}
-                    readOnly
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <section className="vh-100" style={{ backgroundColor: "#f4f5f7" }}>
+      <MDBContainer className="py-5">
+        <MDBRow className="justify-content-center">
+          <MDBCol lg="10">
+            <MDBCard className="mb-3" style={{ borderRadius: ".5rem" }}>
+              <MDBCardBody className="p-4">
+                <MDBTypography tag="h4" className="mb-3">
+                  {job.job.job_title || "Untitled Job"}
+                </MDBTypography>
+                <hr />
+
+                <MDBRow>
+                  <MDBCol md="6">
+                    <MDBTypography tag="h6">Address</MDBTypography>
+                    <MDBCardText className="text-muted">{job.job.address || "N/A"}</MDBCardText>
+                  </MDBCol>
+                  <MDBCol md="6">
+                    <MDBTypography tag="h6">Zip Code</MDBTypography>
+                    <MDBCardText className="text-muted">{job.job.zipcode || "N/A"}</MDBCardText>
+                  </MDBCol>
+                </MDBRow>
+
+                <MDBRow className="pt-3">
+                  <MDBCol md="6">
+                    <MDBTypography tag="h6">Job Type</MDBTypography>
+                    <MDBCardText className="text-muted">{job.job.is_remote || "On-Site"}</MDBCardText>
+                  </MDBCol>
+                  <MDBCol md="6">
+                    <MDBTypography tag="h6">Budget</MDBTypography>
+                    <MDBCardText className="text-muted">${job.job.budget || "N/A"}</MDBCardText>
+                  </MDBCol>
+                </MDBRow>
+
+                <MDBRow className="pt-3">
+                  <MDBCol md="6">
+                    <MDBTypography tag="h6">Required Skill</MDBTypography>
+                    <MDBCardText className="text-muted">{job.job.skill || "Not specified"}</MDBCardText>
+                  </MDBCol>
+                  <MDBCol md="6">
+                    <MDBTypography tag="h6">Experience</MDBTypography>
+                    <MDBCardText className="text-muted">{job.job.experience || "Not specified"} years</MDBCardText>
+                  </MDBCol>
+                </MDBRow>
+
+                <MDBRow className="pt-3">
+                  <MDBCol md="6">
+                    <MDBTypography tag="h6">Education</MDBTypography>
+                    <MDBCardText className="text-muted">{job.job.education || "Not specified"}</MDBCardText>
+                  </MDBCol>
+                  <MDBCol md="6">
+                    <MDBTypography tag="h6">Deadline</MDBTypography>
+                    <MDBCardText className="text-muted">
+                      {job.job.deadline ? new Date(job.job.deadline).toLocaleDateString() : "N/A"}
+                    </MDBCardText>
+                  </MDBCol>
+                </MDBRow>
+
+                <MDBRow className="pt-3">
+                  <MDBCol md="12">
+                    <MDBTypography tag="h6">Description</MDBTypography>
+                    <MDBCardText className="text-muted">{job.job.description || "No description available"}</MDBCardText>
+                  </MDBCol>
+                </MDBRow>
+
+                <hr />
+
+              </MDBCardBody>
+            </MDBCard>
+          </MDBCol>
+        </MDBRow>
+      </MDBContainer>
+    </section>
   );
 };
 
-export default JobViewForm;
+export default JobView;

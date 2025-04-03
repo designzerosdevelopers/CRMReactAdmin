@@ -1,8 +1,8 @@
-import React, { Suspense, Fragment, lazy } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Fragment, lazy, Suspense } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import Loader from './components/Loader/Loader';
-import AdminLayout from './layouts/AdminLayout';
 import { BASE_URL } from './config/constant';
+import AdminLayout from './layouts/AdminLayout';
 
 // AuthGuard component to protect routes
 const AuthGuard = ({ children }) => {
@@ -173,7 +173,7 @@ const routes = [
         path: '/organization/edit/:id',
         element: lazy(() => import('./views/organization/edit'))
       },
-     
+
       {
         exact: 'true',
         path: '/organization/show/:id',
@@ -218,8 +218,30 @@ const routes = [
       },
       {
         exact: 'true',
+        path: '/job/view/:id',
+        element: lazy(() => import('./views/job/show'))
+      },
+      {
+        title: 'candidate',
+        exact: 'true',
+        path: '/candidates/:id',
+        element: lazy(() => import('./views/candidate/index'))
+      },
+      {
+        title: 'candidate',
+        exact: 'true',
+        path: '/candidates/view/:id',
+        element: lazy(() => import('./views/candidate/view'))
+      },
+      {
+        exact: 'true',
         path: '/invite',
         element: lazy(() => import('./views/invite/index'))
+      },
+      {
+        exact: 'true',
+        path: '/profile',
+        element: lazy(() => import('./views/profile/edit'))
       },
 
       {

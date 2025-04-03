@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const EmployeeEdit = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+
   const [employeeData, setEmployeeData] = useState({
-    // Combine all fields from both "user" and "employee"
     name: '',
     email: '',
     gender: '',
@@ -23,25 +26,24 @@ const EmployeeEdit = () => {
   });
 
   const [loading, setLoading] = useState(true);
-  const [errors, setErrors] = useState([]);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [passwordMismatch, setPasswordMismatch] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-  
-  // Fetch existing employee data
+
+  // Show toast notification
+  const showToast = (message, type) => {
+    toast[type](message, { position: "top-right", autoClose: 3000 });
+  };
+
+  // Fetch Employee Data
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_URL}/employee/${id}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('auth_token')}`
-        }
+        headers: { Authorization: `Bearer ${localStorage.getItem('auth_token')}` }
       })
       .then((response) => {
-        // "data" is the employee object, which includes "employee" fields + "user" relationship
-        // e.g., response.data.data => { id, phone_number, user: { name, email }, etc. }
-        const emp = response.data.data; // The "Employee" model
-        const usr = emp.user; // The related "User"
+        const emp = response.data.data;
+        const usr = emp.user;
 
-        // Merge "user" fields + "employee" fields into one object
         setEmployeeData({
           name: usr.name || '',
           email: usr.email || '',
@@ -67,57 +69,56 @@ const EmployeeEdit = () => {
       });
   }, [id]);
 
-  // Handle text input changes
+  // Handle Input Changes
   const handleChange = (e) => {
-    setEmployeeData({ ...employeeData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    const updatedData = { ...employeeData, [name]: value };
+    setEmployeeData(updatedData);
+
+    // Check password mismatch in real-time
+    if (name === 'password' || name === 'password_confirmation') {
+      setPasswordMismatch(updatedData.password !== updatedData.password_confirmation);
+    }
   };
 
-  // Handle file change
+  // Handle File Change
   const handleFileChange = (e) => {
     setSelectedFile(e.target.files[0]);
   };
 
-  // Submit updated data
+  // Handle Form Submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSuccessMessage('');
-    setErrors([]);
+
+    if (passwordMismatch) {
+      showToast('❌ Passwords do not match!', 'error');
+      return;
+    }
 
     const formData = new FormData();
-
-    // Append all non-empty text fields
     Object.entries(employeeData).forEach(([key, value]) => {
-      if (value) {
-        formData.append(key, value);
-      }
+      if (value) formData.append(key, value);
     });
 
-    // Append file if selected
     if (selectedFile) {
       formData.append('avatar', selectedFile);
     }
-    console.log('EmployeeData just before submitting:', employeeData);
 
-    // ✅ Debug: Log the FormData key/value pairs
-    for (let [key, val] of formData.entries()) {
-      console.log(key, val);
-    }
-
-    // Append _method for spoofing
     formData.append('_method', 'PUT');
 
     try {
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/employee/update/${id}`, formData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('auth_token')}`
-          // Let Axios set the Content-Type header automatically.
         }
       });
-      setSuccessMessage('Employee updated successfully!');
-      setEmployeeData({ ...employeeData, ...response.data.data });
+
+      showToast(response.data.message || '✅ Employee updated successfully!', 'success');
+
+      setTimeout(() => navigate('/employee/index'), 2000);
     } catch (error) {
       console.error('Error updating employee:', error.response?.data);
-      setErrors(error.response?.data?.errors || ['An unexpected error occurred']);
+      showToast(error.response?.data?.message || '❌ An unexpected error occurred.', 'error');
     }
   };
 
@@ -126,18 +127,7 @@ const EmployeeEdit = () => {
   return (
     <div className="container">
       <h2>Edit Employee</h2>
-
-      {errors.length > 0 && (
-        <div className="alert alert-danger">
-          <ul>
-            {errors.map((err, index) => (
-              <li key={index}>{err}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {successMessage && <div className="alert alert-success">{successMessage}</div>}
+      <ToastContainer />
 
       <form onSubmit={handleSubmit}>
         {/* Name */}
@@ -163,100 +153,41 @@ const EmployeeEdit = () => {
           </select>
         </div>
 
-        {/* Phone Number */}
-        <div className="mb-3">
-          <label>Phone Number:</label>
-          <input type="text" name="phone_number" value={employeeData.phone_number} onChange={handleChange} className="form-control" />
-        </div>
+        {/* Other Fields */}
+        {[
+          'phone_number',
+          'address',
+          'birth_date',
+          'zipcode',
+          'latest_degree',
+          'latest_university',
+          'current_organization',
+          'current_department',
+          'current_position'
+        ].map((field) => (
+          <div className="mb-3" key={field}>
+            <label>{field.replace('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase())}:</label>
+            <input
+              type={field === 'birth_date' ? 'date' : 'text'}
+              name={field}
+              value={employeeData[field]}
+              onChange={handleChange}
+              className="form-control"
+            />
+          </div>
+        ))}
 
-        {/* Address */}
-        <div className="mb-3">
-          <label>Address:</label>
-          <input type="text" name="address" value={employeeData.address} onChange={handleChange} className="form-control" />
-        </div>
-
-        {/* Birth Date */}
-        <div className="mb-3">
-          <label>Birth Date:</label>
-          <input type="date" name="birth_date" value={employeeData.birth_date} onChange={handleChange} className="form-control" />
-        </div>
-
-        {/* Zipcode */}
-        <div className="mb-3">
-          <label>Zipcode:</label>
-          <input type="text" name="zipcode" value={employeeData.zipcode} onChange={handleChange} className="form-control" />
-        </div>
-
-        {/* Latest Degree */}
-        <div className="mb-3">
-          <label>Latest Degree:</label>
-          <input type="text" name="latest_degree" value={employeeData.latest_degree} onChange={handleChange} className="form-control" />
-        </div>
-
-        {/* Latest University */}
-        <div className="mb-3">
-          <label>Latest University:</label>
-          <input
-            type="text"
-            name="latest_university"
-            value={employeeData.latest_university}
-            onChange={handleChange}
-            className="form-control"
-          />
-        </div>
-
-        {/* Current Organization */}
-        <div className="mb-3">
-          <label>Current Organization:</label>
-          <input
-            type="text"
-            name="current_organization"
-            value={employeeData.current_organization}
-            onChange={handleChange}
-            className="form-control"
-          />
-        </div>
-
-        {/* Current Department */}
-        <div className="mb-3">
-          <label>Current Department:</label>
-          <input
-            type="text"
-            name="current_department"
-            value={employeeData.current_department}
-            onChange={handleChange}
-            className="form-control"
-          />
-        </div>
-
-        {/* Current Position */}
-        <div className="mb-3">
-          <label>Current Position:</label>
-          <input
-            type="text"
-            name="current_position"
-            value={employeeData.current_position}
-            onChange={handleChange}
-            className="form-control"
-          />
-        </div>
-
-        {/* Password (Optional) */}
+        {/* Password */}
         <div className="mb-3">
           <label>New Password:</label>
-          <input
-            type="password"
-            name="password"
-            onChange={handleChange}
-            className="form-control"
-            minLength="8" // Browser-level validation for at least 8 characters
-          />
+          <input type="password" name="password" onChange={handleChange} className="form-control" minLength="8" />
         </div>
 
         {/* Confirm Password */}
         <div className="mb-3">
           <label>Confirm Password:</label>
           <input type="password" name="password_confirmation" onChange={handleChange} className="form-control" minLength="8" />
+          {passwordMismatch && <small className="text-danger">❌ Passwords do not match</small>}
         </div>
 
         {/* Avatar Upload */}

@@ -1,14 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const CategoryEdit = ({ cat, csrfToken }) => {
   const { id } = useParams();
-  // Use optional chaining to avoid errors if cat is undefined
   const [catName, setCatName] = useState(cat?.cat_name || '');
-  const [errors, setErrors] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState('');
+
+  const showToast = (message, type) => {
+    if (type === 'success') {
+      toast.success(message, { position: 'top-right', autoClose: 3000 });
+    } else if (type === 'error') {
+      toast.error(message, { position: 'top-right', autoClose: 5000 });
+    }
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -19,13 +26,12 @@ const CategoryEdit = ({ cat, csrfToken }) => {
         }
       })
       .then((response) => {
-        // Extract the category name from the fetched data
-        const categoryData = response.data.data;
-        setCatName(categoryData.cat_name);
+        setCatName(response.data.data.cat_name);
         setLoading(false);
       })
       .catch((error) => {
         console.error('Error fetching category data:', error);
+        showToast('Failed to fetch category data', 'error');
         setLoading(false);
       });
   }, [id]);
@@ -33,11 +39,8 @@ const CategoryEdit = ({ cat, csrfToken }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setErrors([]);
-    setSuccess('');
 
     try {
-      // Fetch CSRF token cookie first if using Sanctum
       await fetch(`${import.meta.env.VITE_API_URL}/sanctum/csrf-cookie`, {
         credentials: 'include'
       });
@@ -58,21 +61,17 @@ const CategoryEdit = ({ cat, csrfToken }) => {
 
       if (!response.ok) {
         if (data.errors) {
-          // Flatten Laravel-style validation errors
-          const errorArray = Object.values(data.errors).flat();
-          setErrors(errorArray);
-        } else if (data.message) {
-          setErrors([data.message]);
+          const errorMessages = Object.values(data.errors).flat();
+          errorMessages.forEach((err) => showToast(err, 'error'));
         } else {
-          setErrors(['Failed to update category']);
+          showToast(data.message || 'Failed to update category', 'error');
         }
       } else {
-        setSuccess('Category updated successfully!');
-        setErrors([]);
+        showToast('Category updated successfully! 🎉', 'success');
       }
     } catch (error) {
       console.error('Submission error:', error);
-      setErrors(['Network error. Please check your connection.']);
+      showToast('Network error. Please check your connection.', 'error');
     } finally {
       setLoading(false);
     }
@@ -80,23 +79,11 @@ const CategoryEdit = ({ cat, csrfToken }) => {
 
   return (
     <div className="container-xxl flex-grow-1 container-p-y">
+      <ToastContainer />
+
       <div className="row">
         <div className="col-md-12">
           <div className="card mb-4">
-            {/* Error Messages */}
-            {errors.length > 0 && (
-              <div className="alert alert-danger">
-                <ul>
-                  {errors.map((error, index) => (
-                    <li key={index}>{error}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Success Message */}
-            {success && <div className="alert alert-success">{success}</div>}
-
             <h5 className="card-header">Edit Category</h5>
             <hr className="my-0" />
             <div className="card-body">

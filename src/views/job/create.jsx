@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Added for navigation
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { UserContext } from '../../contexts/UserContext';
-import { useContext } from 'react';
 
 const JobCreateForm = ({ csrfToken, orgId }) => {
   const { user, role, updateUser, updateRole } = useContext(UserContext);
@@ -26,6 +27,10 @@ const JobCreateForm = ({ csrfToken, orgId }) => {
   const [success, setSuccess] = useState('');
   const navigate = useNavigate(); // Navigation hook
   const token = localStorage.getItem('auth_token');
+
+  const showToast = (message, type) => {
+    toast[type](message, { position: 'top-right', autoClose: 3000 });
+  };
 
   // Fetch CSRF cookie on mount
   useEffect(() => {
@@ -60,12 +65,13 @@ const JobCreateForm = ({ csrfToken, orgId }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setErrors([]);
-    setSuccess('');
+    // setLoading(true);
+    // setErrors([]);
+    // setSuccess('');
 
-    console.log('user is', user);
+    console.log('User:', user);
 
+    // Prepare form data
     const formData = {
       job_title: jobTitle,
       address,
@@ -79,9 +85,9 @@ const JobCreateForm = ({ csrfToken, orgId }) => {
       bid_close: bidClose,
       deadline,
       description,
-      user: user,
+      user,
       user_role: role,
-      ...(orgId && { creator: orgId })
+      ...(orgId && { creator: orgId }) // Conditional object property
     };
 
     try {
@@ -90,6 +96,7 @@ const JobCreateForm = ({ csrfToken, orgId }) => {
         headers: {
           'Content-Type': 'application/json',
           'X-CSRF-TOKEN': csrfToken,
+          Accept: 'application/json',
           Authorization: `Bearer ${token}`
         },
         credentials: 'include',
@@ -99,47 +106,46 @@ const JobCreateForm = ({ csrfToken, orgId }) => {
       const data = await response.json();
 
       if (!response.ok) {
-        setErrors(data.errors || ['Submission failed']);
+        const errorMessages = data.errors ? Object.values(data.errors).flat() : ['An error occurred'];
+        errorMessages.forEach((err) => showToast(err, 'error'));
       } else {
-        setSuccess('Job created successfully');
-        // Reset form fields
-        setJobTitle('');
-        setAddress('');
-        setCategoryId('');
-        setDegreeId('');
-        setZipcode('');
-        setIsRemote('');
-        setSkill('');
-        setExperience('');
-        setBudget('');
-        setBidClose('');
-        setDeadline('');
-        setDescription('');
-        navigate('/job/index');
+        showToast(data.message || 'Job created successfully!', 'success');
+
+        // Reset form fields using a single state update (if using an object for form state)
+        // resetFormFields();
+
+        // Redirect after 2 seconds
+        setTimeout(() => navigate('/job/index'), 2000);
       }
     } catch (error) {
-      setErrors(['Network error. Please try again.']);
+      console.error('Error submitting form:', error);
+      showToast('An unexpected error occurred.', 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to reset form fields
+  const resetFormFields = () => {
+    setJobTitle('');
+    setAddress('');
+    setCategoryId('');
+    setDegreeId('');
+    setZipcode('');
+    setIsRemote(false); // Ensure proper default value
+    setSkill('');
+    setExperience('');
+    setBudget('');
+    setBidClose('');
+    setDeadline('');
+    setDescription('');
   };
 
   if (loading) return <p>Loading...</p>;
 
   return (
     <div className="container-xxl flex-grow-1 container-p-y">
-      {/* Error messages */}
-      {errors.length > 0 && (
-        <div className="alert alert-danger">
-          {errors.map((error, index) => (
-            <p key={index}>{error}</p>
-          ))}
-        </div>
-      )}
-
-      {/* Success message */}
-      {success && <div className="alert alert-success">{success}</div>}
-
+      <ToastContainer />
       {/* Rest of your form JSX remains the same */}
       <div className="row">
         <div className="col-xxl">
@@ -359,7 +365,7 @@ const JobCreateForm = ({ csrfToken, orgId }) => {
                 <div className="row justify-content-end">
                   <div className="col-sm-10">
                     <button type="submit" className="btn btn-primary">
-                      Send
+                      Save
                     </button>
                   </div>
                 </div>

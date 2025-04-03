@@ -1,13 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { Row, Col } from 'react-bootstrap';
 import axios from 'axios';
-import Card from '../../components/Card/MainCard';
+import { useEffect, useState } from 'react';
+import { Col, Row } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
+import Card from '../../components/Card/MainCard';
+
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import { useParams } from 'react-router-dom';
 
 const JobIndexPage = () => {
+  const { orgid } = useParams();
   const [jobs, setJobs] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this job?')) return;
@@ -18,7 +26,7 @@ const JobIndexPage = () => {
 
       const response = await fetch(url, {
         method: 'DELETE',
-        credentials: 'include', // Include cookies for authentication
+        credentials: 'include', // include cookies for authentication
         headers: {
           Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
           'Content-Type': 'application/json'
@@ -29,7 +37,6 @@ const JobIndexPage = () => {
         const data = await response.json();
         setError(data.error || 'Failed to delete job');
       } else {
-        // Remove the deleted job from state by filtering it out
         setJobs((prevJobs) => prevJobs.filter((job) => job.id !== id));
       }
     } catch (err) {
@@ -39,24 +46,47 @@ const JobIndexPage = () => {
   };
 
   useEffect(() => {
-    axios
-      .get(`${import.meta.env.VITE_API_URL}/jobs`)
-      .then((response) => {
-        console.log('Response data:', response);
+    // Fetch CSRF cookie
+    const getCsrfCookie = async () => {
+      await fetch(`${import.meta.env.VITE_API_URL}/sanctum/csrf-cookie`, {
+        credentials: 'include'
+      });
+    };
+    getCsrfCookie();
+  }, []);
+  const [canManageCandidates, setCanManageCandidates] = useState(false); // ✅ Added state
 
+  useEffect(() => {
+    // Retrieve user role from local storage
+    const userRole = localStorage.getItem('role');
+    const hasPermission = userRole === 'super-admin' || userRole === 'organization';
+    const isadmin = userRole === 'super-admin';
+
+    setCanManageCandidates(hasPermission); // ✅ Store in state
+
+    // Determine API endpoint based on role
+    const jobApiUrl = isadmin ? `${import.meta.env.VITE_API_URL}/org-jobs/${orgid}` : `${import.meta.env.VITE_API_URL}/job`;
+
+    axios
+      .get(jobApiUrl, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      })
+      .then((response) => {
         let fetchedJobs = [];
 
-        // Check multiple possible structures of the API response
-        if (Array.isArray(response.data.jobs)) {
+        if (Array.isArray(response.data?.response)) {
+          fetchedJobs = response.data.response;
+        } else if (Array.isArray(response.data?.jobs)) {
           fetchedJobs = response.data.jobs;
-        } else if (Array.isArray(response.data.data)) {
+        } else if (Array.isArray(response.data?.data)) {
           fetchedJobs = response.data.data;
         } else if (Array.isArray(response.data)) {
           fetchedJobs = response.data;
-        } else {
-          console.warn('Unexpected response structure:', response.data);
         }
 
+        console.log('jobs', fetchedJobs);
         setJobs(fetchedJobs);
         setError('');
       })
@@ -92,7 +122,7 @@ const JobIndexPage = () => {
                     <th>Job Title</th>
                     <th>Budget</th>
                     <th>Bid Close</th>
-                    <th>Organization</th>
+                    <th>Candidates</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -102,15 +132,39 @@ const JobIndexPage = () => {
                       <td>{job.job_title}</td>
                       <td>{job.budget}</td>
                       <td>{job.bid_close}</td>
-                      <td>{job.organization ? job.organization.organization_name : 'N/A'}</td>
+                      <td>{job.organization?.organization_name || 'N/A'}</td>
                       <td>
-                        <Link className="dropdown-item" to={`/job/edit/${job.id}`} state={{ job: job, jobId: job.id }}>
-                          <i className="fas fa-edit me-2"></i> Edit
-                        </Link>
+                        <div className="dropdown">
+                          <button type="button" className="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                            <i className="bx bx-dots-vertical-rounded"></i>
+                          </button>
 
-                        <button type="button" className="dropdown-item" onClick={() => handleDelete(job.id)}>
-                          <i className="fas fa-trash me-2"></i> Delete
-                        </button>
+                          <div className="dropdown-menu">
+                            {/* Show Candidates option only for super-admin & organization */}
+                            {canManageCandidates && (
+                              <Link className="dropdown-item" to={`/candidates/${job.id}`}>
+                                <i className="fas fa-user me-2"></i> Candidates
+                              </Link>
+                            )}
+
+                            {/* General actions for all users */}
+                            <Link className="dropdown-item" to={`/job/view/${job.id}`}>
+                              <i className="fas fa-file me-2"></i> View
+                            </Link>
+
+                            {/* Edit & Delete only for super-admin & organization */}
+                            {/* {canManageCandidates && (
+                              <> */}
+                            <Link className="dropdown-item" to={`/job/edit/${job.id}`}>
+                              <i className="fas fa-edit me-2"></i> Edit
+                            </Link>
+                            <button type="button" className="dropdown-item" onClick={() => handleDelete(job.id)}>
+                              <i className="fas fa-trash me-2"></i> Delete
+                            </button>
+                            {/* </>
+                            )} */}
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   ))}

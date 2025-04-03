@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Card, ListGroup, Dropdown } from 'react-bootstrap';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { Card, Dropdown, ListGroup } from 'react-bootstrap';
 import PerfectScrollbar from 'react-perfect-scrollbar';
+import { Link, useNavigate } from 'react-router-dom';
 
 import ChatList from './ChatList';
 
@@ -183,7 +182,7 @@ const NavRight = () => {
                   </Link>
                 </ListGroup.Item>
                 <ListGroup.Item as="li" bsPrefix=" ">
-                  <Link to="#" className="dropdown-item">
+                  <Link to="/profile" className="dropdown-item">
                     <i className="feather icon-user" /> Profile
                   </Link>
                 </ListGroup.Item>

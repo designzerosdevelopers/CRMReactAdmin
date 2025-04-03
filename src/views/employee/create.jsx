@@ -1,72 +1,82 @@
-import React, { useState } from 'react';
-import { Row, Col, Card, Form, Button } from 'react-bootstrap';
-import PageTitle from '../../components/PageTitle';
-import { useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { Button, Card, Col, Form, Row } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-const EmployeeCreate = ({ orgId, csrfToken, initialErrors = [], initialSuccess = '' }) => {
-  // Form state
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [passwordConfirmation, setPasswordConfirmation] = useState('');
-  const [errors, setErrors] = useState(initialErrors);
-  const [success, setSuccess] = useState(initialSuccess);
+const EmployeeCreate = ({ orgId, csrfToken }) => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const showToast = (message, type) => {
+    toast[type](message, { position: "top-right", autoClose: 3000 });
+  };
+
+  const validateForm = () => {
+    let errors = [];
+
+    if (!name.trim()) errors.push("Name is required.");
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) errors.push("Invalid email format.");
+    if (password.length < 8) errors.push("Password must be at least 8 characters long.");
+    if (password !== passwordConfirmation) errors.push("Passwords do not match.");
+
+    if (errors.length > 0) {
+      errors.forEach((err) => showToast(err, "error"));
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     setLoading(true);
-    setErrors([]);
-    setSuccess('');
+    await fetch(`${import.meta.env.VITE_API_URL}/sanctum/csrf-cookie`, { credentials: "include" });
 
-    // Call CSRF endpoint first if not already done
-    await fetch(`${import.meta.env.VITE_API_URL}/sanctum/csrf-cookie`, {
-      credentials: 'include'
-    });
-
-    const endpoint = orgId ? '/org-employee-store' : '/employee';
+    const endpoint = orgId ? "/org-employee-store" : "/employee";
     const url = `${import.meta.env.VITE_API_URL}${endpoint}`;
-
-    // Retrieve token if needed (for token-based auth)
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem("auth_token");
 
     try {
       const response = await fetch(url, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': csrfToken, // if needed
-          Accept: 'application/json',
-
-          // You may not need the Authorization header if using cookie-based auth with Sanctum.
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json",
+          "X-CSRF-TOKEN": csrfToken,
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify({
           name,
           email,
           password,
           password_confirmation: passwordConfirmation,
-          ...(orgId ? { creator: orgId } : {})
-        })
+          ...(orgId ? { creator: orgId } : {}),
+        }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
-        setErrors(data.errors || ['An error occurred']);
+        const errorMessages = data.errors ? Object.values(data.errors).flat() : ["An error occurred"];
+        errorMessages.forEach((err) => showToast(err, "error"));
       } else {
-        const data = await response.json();
-        setSuccess(data.message || 'Employee created successfully');
-        setName('');
-        setEmail('');
-        setPassword('');
-        setPasswordConfirmation('');
-        navigate('/employee/index');
+        showToast(data.message || "Employee created successfully!", "success");
+        setName("");
+        setEmail("");
+        setPassword("");
+        setPasswordConfirmation("");
+        setTimeout(() => navigate("/employee/index"), 2000);
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
-      setErrors(['An unexpected error occurred']);
+      console.error("Error submitting form:", error);
+      showToast("An unexpected error occurred.", "error");
     } finally {
       setLoading(false);
     }
@@ -74,51 +84,42 @@ const EmployeeCreate = ({ orgId, csrfToken, initialErrors = [], initialSuccess =
 
   return (
     <div className="container-xxl flex-grow-1 container-p-y">
- 
-
-      {errors.length > 0 && (
-        <div className="alert alert-danger">
-          <ul>
-            {errors.map((err, idx) => (
-              <li key={idx}>{err}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {success && <div className="alert alert-success">{success}</div>}
-
+      <ToastContainer />
       <Row>
         <Col sm={12}>
           <Card className="mb-4">
             <Card.Header className="d-flex align-items-center justify-content-between">
-              <Card.Title as="h5">Create Form</Card.Title>
-              <small className="text-muted float-end">Fill all the fields</small>
+              <Card.Title as="h5">Create Employee</Card.Title>
+              <small className="text-muted float-end">Fill all fields</small>
             </Card.Header>
             <Card.Body>
               <Form onSubmit={handleSubmit}>
                 <Form.Group as={Row} className="mb-3" controlId="formName">
-                  <Form.Label column sm={2}>
-                    Name
-                  </Form.Label>
+                  <Form.Label column sm={2}>Name</Form.Label>
                   <Col sm={10}>
-                    <Form.Control type="text" placeholder="Enter name" value={name} onChange={(e) => setName(e.target.value)} />
+                    <Form.Control
+                      type="text"
+                      placeholder="Enter name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
                   </Col>
                 </Form.Group>
 
                 <Form.Group as={Row} className="mb-3" controlId="formEmail">
-                  <Form.Label column sm={2}>
-                    Email
-                  </Form.Label>
+                  <Form.Label column sm={2}>Email</Form.Label>
                   <Col sm={10}>
-                    <Form.Control type="text" placeholder="Enter email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                    <Form.Control
+                      type="email"
+                      placeholder="Enter email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
                   </Col>
                 </Form.Group>
 
                 <Form.Group as={Row} className="mb-3" controlId="formPassword">
-                  <Form.Label column sm={2}>
-                    Password
-                  </Form.Label>
+                  <Form.Label column sm={2}>Password</Form.Label>
                   <Col sm={10}>
                     <Form.Control
                       type="password"
@@ -132,9 +133,7 @@ const EmployeeCreate = ({ orgId, csrfToken, initialErrors = [], initialSuccess =
                 </Form.Group>
 
                 <Form.Group as={Row} className="mb-3" controlId="formPasswordConfirm">
-                  <Form.Label column sm={2}>
-                    Confirm Password
-                  </Form.Label>
+                  <Form.Label column sm={2}>Confirm Password</Form.Label>
                   <Col sm={10}>
                     <Form.Control
                       type="password"
@@ -152,7 +151,7 @@ const EmployeeCreate = ({ orgId, csrfToken, initialErrors = [], initialSuccess =
                 <Form.Group as={Row}>
                   <Col sm={{ span: 10, offset: 2 }}>
                     <Button variant="primary" type="submit" disabled={loading}>
-                      {loading ? 'Sending...' : 'Send'}
+                      {loading ? "Saving..." : "Save"}
                     </Button>
                   </Col>
                 </Form.Group>

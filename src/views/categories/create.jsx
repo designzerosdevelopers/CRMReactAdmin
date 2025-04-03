@@ -1,16 +1,22 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const CategoryCreate = ({ catId, csrfToken, initialErrors = [], initialSuccess = '' }) => {
   const [catName, setCatName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState(initialErrors);
-  const [success, setSuccess] = useState(initialSuccess);
+
+  const showToast = (message, type) => {
+    if (type === 'success') {
+      toast.success(message, { position: 'top-right', autoClose: 3000 });
+    } else if (type === 'error') {
+      toast.error(message, { position: 'top-right', autoClose: 5000 });
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setErrors([]);
-    setSuccess(''); // Clear previous success messages
 
     try {
       // Fetch CSRF token
@@ -32,27 +38,24 @@ const CategoryCreate = ({ catId, csrfToken, initialErrors = [], initialSuccess =
         body: JSON.stringify({ cat_name: catName })
       });
 
-      const data = await response.json(); // Moved here to handle both success and error cases
+      const data = await response.json();
 
       if (!response.ok) {
-        // Handle error response (adjust based on your API's error structure)
         if (data.errors) {
-          // Flatten errors if they're an object (e.g., Laravel validation errors)
-          const errorArray = Object.values(data.errors).flat();
-          setErrors(errorArray);
+          const errorMessages = Object.values(data.errors).flat();
+          errorMessages.forEach((err) => showToast(err, 'error'));
         } else if (data.message) {
-          setErrors([data.message]);
+          showToast(data.message, 'error');
         } else {
-          setErrors(['An error occurred']);
+          showToast('An error occurred', 'error');
         }
       } else {
-        // On success
         setCatName('');
-        setSuccess('Category created successfully!'); // Set success message
+        showToast('Category created successfully! 🎉', 'success');
       }
     } catch (error) {
       console.error('Submission error:', error);
-      setErrors(['Failed to connect to the server.']);
+      showToast('Failed to connect to the server.', 'error');
     } finally {
       setLoading(false);
     }
@@ -60,18 +63,7 @@ const CategoryCreate = ({ catId, csrfToken, initialErrors = [], initialSuccess =
 
   return (
     <div className="container-xxl flex-grow-1 container-p-y">
-      {/* Consolidated error display to one location */}
-      {errors.length > 0 && (
-        <div className="alert alert-danger">
-          <ul>
-            {errors.map((err, idx) => (
-              <li key={idx}>{err}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {success && <div className="alert alert-success">{success}</div>}
+      <ToastContainer />
 
       <div className="row">
         <div className="col-8">
@@ -101,7 +93,7 @@ const CategoryCreate = ({ catId, csrfToken, initialErrors = [], initialSuccess =
                 <div className="row justify-content-end">
                   <div className="col-sm-10">
                     <button type="submit" className="btn btn-primary" disabled={loading}>
-                      {loading ? 'Sending...' : 'Send'}
+                      {loading ? 'Saving...' : 'Save'}
                     </button>
                   </div>
                 </div>

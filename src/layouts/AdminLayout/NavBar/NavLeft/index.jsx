@@ -1,5 +1,5 @@
 import React from 'react';
-import { ListGroup, Dropdown } from 'react-bootstrap';
+import { Dropdown, ListGroup } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
 import useWindowSize from '../../../../hooks/useWindowSize';
@@ -18,9 +18,9 @@ const NavLeft = () => {
       <ListGroup as="ul" bsPrefix=" " className="navbar-nav mr-auto">
         <ListGroup.Item as="li" bsPrefix=" " className={navItemClass.join(' ')}>
           <Dropdown align={'start'}>
-            <Dropdown.Toggle variant={'link'} id="dropdown-basic">
+            {/* <Dropdown.Toggle variant={'link'} id="dropdown-basic">
               Dropdown
-            </Dropdown.Toggle>
+            </Dropdown.Toggle> */}
             <ul>
               <Dropdown.Menu>
                 <li>
