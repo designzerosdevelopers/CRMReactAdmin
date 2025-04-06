@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { MDBCol, MDBContainer, MDBRow, MDBCard, MDBCardText, MDBCardBody, MDBCardImage, MDBTypography, MDBIcon } from 'mdb-react-ui-kit';
-import { useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
+import { MDBCard, MDBCardBody, MDBCardImage, MDBCardText, MDBCol, MDBContainer, MDBIcon, MDBRow, MDBTypography } from 'mdb-react-ui-kit';
+import { useEffect, useState } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
 
 const EmployeeDetail = () => {
   const { id } = useParams();
@@ -61,13 +61,13 @@ const EmployeeDetail = () => {
                   }}
                 >
                   <MDBCardImage
-                    src={emp.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.name)}`}
+                    src={emp.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(emp.user.name)}`}
                     alt="Employee Photo"
                     className="my-5"
                     style={{ width: '100px' }}
                     fluid
                   />
-                  <MDBTypography tag="h5">{usr.name || 'N/A'}</MDBTypography>
+                  <MDBTypography tag="h5">{emp.user.name || 'N/A'}</MDBTypography>
 
                   <MDBCardText>{emp.current_position || 'N/A'}</MDBCardText>
 

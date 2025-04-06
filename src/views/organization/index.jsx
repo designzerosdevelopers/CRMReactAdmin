@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { Row, Col } from 'react-bootstrap';
-import Card from '../../components/Card/MainCard';
-import { Link } from 'react-router-dom';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import React, { useEffect, useState } from 'react';
+import { Col, Row } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Card from '../../components/Card/MainCard';
 
 const OrganizationPage = () => {
   const [org, setOrg] = useState([]);
@@ -16,32 +18,35 @@ const OrganizationPage = () => {
     if (!window.confirm('Are you sure you want to delete this organization?')) return;
 
     try {
-      const endpoint = `/organization/${organization.id}`;
+      const endpoint = `/organization/${organization.user_id}`;
       const url = `${import.meta.env.VITE_API_URL}${endpoint}`;
 
       const response = await fetch(url, {
         method: 'DELETE',
-        credentials: 'include', // include cookies for authentication
+        credentials: 'include',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
         }
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        setError(data.error || 'Failed to delete organization');
-      } else {
-        // Remove the deleted organization from state
-        setOrg((prevOrg) => prevOrg.filter((o) => o.id !== organization.id));
+      const data = await response.json();
+
+      if (!response.ok || data.success === false) {
+        toast.error(data.message || 'Failed to delete organization');
+        return;
       }
+
+      // Success
+      setOrg((prevOrg) => prevOrg.filter((o) => o.id !== organization.id));
+      toast.success(data.message || 'Organization deleted successfully');
     } catch (err) {
       console.error('Error deleting organization:', err);
-      setError('An unexpected error occurred');
+      toast.error('An unexpected error occurred');
     }
   };
 
-  // Fetch organizations on component mount
   useEffect(() => {
     axios
       .get(`${import.meta.env.VITE_API_URL}/organization`, {
@@ -50,13 +55,14 @@ const OrganizationPage = () => {
         }
       })
       .then((response) => {
-        // Assuming the API returns data in response.data.data
         const fetchedOrganizations = response.data.data || [];
         setOrg(fetchedOrganizations);
         setError('');
       })
       .catch((err) => {
-        setError(err.response?.data?.message || 'Error fetching organizations');
+        const msg = err.response?.data?.message || 'Error fetching organizations';
+        setError(msg);
+        toast.error(msg);
       })
       .finally(() => {
         setLoading(false);
@@ -64,10 +70,10 @@ const OrganizationPage = () => {
   }, []);
 
   if (loading) return <div>Loading...</div>;
-  if (error) return <div>{error}</div>;
 
   return (
     <React.Fragment>
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
       <div className="d-flex justify-content-end align-items-center mb-4">
         <Link to="/organization/create">
           <button type="button" className="btn rounded-pill btn-primary">

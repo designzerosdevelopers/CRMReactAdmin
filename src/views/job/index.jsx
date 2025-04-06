@@ -132,7 +132,7 @@ const JobIndexPage = () => {
                       <td>{job.job_title}</td>
                       <td>{job.budget}</td>
                       <td>{job.bid_close}</td>
-                      <td>{job.organization?.organization_name || 'N/A'}</td>
+                      <td>{job.application_form_count}</td>
                       <td>
                         <div className="dropdown">
                           <button type="button" className="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">

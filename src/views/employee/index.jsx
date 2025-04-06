@@ -1,14 +1,12 @@
-import React, { useEffect, useState } from 'react';
-
-import { Row, Col } from 'react-bootstrap';
-import Card from '../../components/Card/MainCard';
-
-import { Link } from 'react-router-dom';
-
-import PageTitle from '../../components/PageTitle';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import React, { useEffect, useState } from 'react';
+import { Col, Row } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Card from '../../components/Card/MainCard';
 
 const EmployeeIndexPage = ({ creator, successMessage }) => {
   const [emps, setEmps] = useState([]);
@@ -23,46 +21,42 @@ const EmployeeIndexPage = ({ creator, successMessage }) => {
         }
       })
       .then((response) => {
-        // Assuming the API returns data in response.data.data or response.data
         const fetchedEmployees = Array.isArray(response.data.data) ? response.data.data : Array.isArray(response.data) ? response.data : [];
-        // console.log('Response data:', fetchedEmployees);
         setEmps(fetchedEmployees);
         setError('');
       })
       .catch((err) => {
-        setError(err.response?.data?.message || 'Error fetching employees');
+        const msg = err.response?.data?.message || 'Error fetching employees';
+        setError(msg);
+        toast.error(msg);
       })
       .finally(() => {
         setLoading(false);
       });
   }, []);
 
-  // Handle deletion of an employee.
   const handleDelete = async (emp) => {
     if (!window.confirm('Are you sure you want to delete this employee?')) return;
 
+    await fetch(`${import.meta.env.VITE_API_URL}/sanctum/csrf-cookie`, {
+      credentials: 'include'
+    });
+
     try {
-      const endpoint = creator ? `/org-employee-destroy/${emp.user_id}/${emp.creator_id}` : `/employee/${emp.user_id}`;
+      const endpoint = `/employee/${emp.user_id}`;
       const url = `${import.meta.env.VITE_API_URL}${endpoint}`;
 
-      const response = await fetch(url, {
-        method: 'DELETE',
-        credentials: 'include', // include cookies for authentication
+      const response = await axios.delete(url, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`
         }
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        setError(data.error || 'Failed to delete employee');
-      } else {
-        // Remove the deleted employee from state
-        setEmps(emps.filter((e) => e.user_id !== emp.user_id));
-      }
+      setEmps(emps.filter((e) => e.user_id !== emp.user_id));
+      toast.success('Employee deleted successfully');
     } catch (err) {
       console.error('Error deleting employee:', err);
+      toast.error('Failed to delete employee');
       setError('An unexpected error occurred');
     }
   };
@@ -73,6 +67,7 @@ const EmployeeIndexPage = ({ creator, successMessage }) => {
 
   return (
     <React.Fragment>
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} />
       <div className="container-xxl flex-grow-1 container-p-y">
         <div className="d-flex justify-content-end align-items-center mb-4">
           {creator ? (
@@ -90,7 +85,7 @@ const EmployeeIndexPage = ({ creator, successMessage }) => {
           )}
         </div>
 
-        {successMessage && <div className="alert alert-success">{successMessage}</div>}
+        {successMessage && toast.success(successMessage)}
         {error && <div className="alert alert-danger">{error}</div>}
 
         <Row>
@@ -109,7 +104,6 @@ const EmployeeIndexPage = ({ creator, successMessage }) => {
                   <tbody className="table-border-bottom-0">
                     {emps.length > 0 ? (
                       emps.map((emp) => {
-                        // Use the nested user object directly.
                         const user = emp.user;
                         return (
                           <tr key={emp.user_id}>

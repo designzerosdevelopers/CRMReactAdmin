@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const CategoryCreate = ({ catId, csrfToken, initialErrors = [], initialSuccess = '' }) => {
   const [catName, setCatName] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const showToast = (message, type) => {
     if (type === 'success') {
@@ -52,6 +54,8 @@ const CategoryCreate = ({ catId, csrfToken, initialErrors = [], initialSuccess =
       } else {
         setCatName('');
         showToast('Category created successfully! 🎉', 'success');
+
+        navigate('/categories/index');
       }
     } catch (error) {
       console.error('Submission error:', error);
