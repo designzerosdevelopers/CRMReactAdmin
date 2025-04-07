@@ -67,9 +67,8 @@ const EmployeeDetail = () => {
                     style={{ width: '100px' }}
                     fluid
                   />
-                  <MDBTypography tag="h5">{emp.user.name || 'N/A'}</MDBTypography>
-
-                  <MDBCardText>{emp.current_position || 'N/A'}</MDBCardText>
+                  <MDBCardText tag="h3">{emp.user.name || 'N/A'}</MDBCardText>
+                  <MDBCardText tag="h5">{emp.current_position || 'N/A'}</MDBCardText>
 
                   <MDBIcon far icon="edit mb-5" />
                 </MDBCol>

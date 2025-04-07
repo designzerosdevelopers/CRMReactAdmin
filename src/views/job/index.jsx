@@ -9,13 +9,11 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import { useParams } from 'react-router-dom';
 
 const JobIndexPage = () => {
-  const { orgid } = useParams();
+  //   const { orgId } = useParams();
   const [jobs, setJobs] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-
-
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this job?')) return;
@@ -44,6 +42,7 @@ const JobIndexPage = () => {
       setError('An unexpected error occurred');
     }
   };
+  const { 'org-id': orgId } = useParams(); // Get org-id from URL params
 
   useEffect(() => {
     // Fetch CSRF cookie
@@ -57,18 +56,12 @@ const JobIndexPage = () => {
   const [canManageCandidates, setCanManageCandidates] = useState(false); // ✅ Added state
 
   useEffect(() => {
-    // Retrieve user role from local storage
-    const userRole = localStorage.getItem('role');
-    const hasPermission = userRole === 'super-admin' || userRole === 'organization';
-    const isadmin = userRole === 'super-admin';
+    setLoading(true);
 
-    setCanManageCandidates(hasPermission); // ✅ Store in state
-
-    // Determine API endpoint based on role
-    const jobApiUrl = isadmin ? `${import.meta.env.VITE_API_URL}/org-jobs/${orgid}` : `${import.meta.env.VITE_API_URL}/job`;
+    const endpoint = orgId ? `${import.meta.env.VITE_API_URL}/org-jobs/${orgId}` : `${import.meta.env.VITE_API_URL}/job`;
 
     axios
-      .get(jobApiUrl, {
+      .get(endpoint, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('auth_token')}`
         }
@@ -86,7 +79,6 @@ const JobIndexPage = () => {
           fetchedJobs = response.data;
         }
 
-        console.log('jobs', fetchedJobs);
         setJobs(fetchedJobs);
         setError('');
       })
@@ -96,7 +88,7 @@ const JobIndexPage = () => {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [orgId]);
 
   return (
     <>

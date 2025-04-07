@@ -140,6 +140,11 @@ const routes = [
       },
       {
         exact: 'true',
+        path: '/org-employee/index/:org-id',
+        element: lazy(() => import('./views/employee/index'))
+      },
+      {
+        exact: 'true',
         path: '/employee/create',
         element: lazy(() => import('./views/employee/create'))
       },
@@ -205,7 +210,11 @@ const routes = [
         path: '/job/index',
         element: lazy(() => import('./views/job/index'))
       },
-
+      {
+        exact: 'true',
+        path: '/org-job/index/:org-id',
+        element: lazy(() => import('./views/employee/index'))
+      },
       {
         exact: 'true',
         path: '/job/create',

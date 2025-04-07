@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const EmployeeEdit = () => {
   const { id } = useParams();
@@ -31,7 +31,7 @@ const EmployeeEdit = () => {
 
   // Show toast notification
   const showToast = (message, type) => {
-    toast[type](message, { position: "top-right", autoClose: 3000 });
+    toast[type](message, { position: 'top-right', autoClose: 3000 });
   };
 
   // Fetch Employee Data

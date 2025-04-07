@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const OrganizationCreateForm = () => {
@@ -70,7 +70,7 @@ const OrganizationCreateForm = () => {
         setEmail('');
         setPassword('');
         setPasswordConfirmation('');
-        navigate('/organization/index');
+        setTimeout(() => navigate('/organization/index'), 2000);
       }
     } catch (error) {
       console.error('Error submitting form:', error);

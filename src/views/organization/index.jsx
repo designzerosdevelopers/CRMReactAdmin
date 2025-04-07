@@ -101,16 +101,42 @@ const OrganizationPage = () => {
                     <td>{organization.employee_count}</td>
                     <td>{organization.job_count}</td>
                     <td>
-                      <Link
-                        className="dropdown-item"
-                        to={`/organization/edit/${organization.user_id}`}
-                        state={{ org: organization, orgId: organization.id }}
-                      >
-                        <i className="fas fa-edit me-2"></i> Edit
-                      </Link>
-                      <button type="button" className="dropdown-item" onClick={() => handleDelete(organization)}>
-                        <i className="fas fa-trash me-2"></i> Delete
-                      </button>
+                      <div className="dropdown">
+                        <button type="button" className="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                          <i className="bx bx-dots-vertical-rounded"></i>
+                        </button>
+                        <ul className="dropdown-menu">
+                          <li>
+                            <Link className="dropdown-item" to={`/organization/show/${organization.user_id}`}>
+                              <i className="fas fa-eye me-2"></i> View
+                            </Link>
+                          </li>
+                          <li>
+                            <Link className="dropdown-item" to={`/org-employee/index/${organization.user_id}`}>
+                              <i className="fas fa-users me-2"></i> Employee Index
+                            </Link>
+                          </li>
+                          <li>
+                            <Link className="dropdown-item" to={`/org-job/index/${organization.user_id}`}>
+                              <i className="fas fa-briefcase me-2"></i> Job Index
+                            </Link>
+                          </li>
+                          <li>
+                            <Link
+                              className="dropdown-item"
+                              to={`/organization/edit/${organization.user_id}`}
+                              state={{ org: organization, orgId: organization.id }}
+                            >
+                              <i className="fas fa-edit me-2"></i> Edit
+                            </Link>
+                          </li>
+                          <li>
+                            <button className="dropdown-item text-danger" onClick={() => handleDelete(organization)}>
+                              <i className="fas fa-trash me-2"></i> Delete
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
                     </td>
                   </tr>
                 ))}

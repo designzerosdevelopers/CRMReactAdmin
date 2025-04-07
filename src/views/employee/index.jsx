@@ -3,7 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import React, { useEffect, useState } from 'react';
 import { Col, Row } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Card from '../../components/Card/MainCard';
@@ -13,15 +13,27 @@ const EmployeeIndexPage = ({ creator, successMessage }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
+  const { 'org-id': orgId } = useParams(); // Get org-id from URL params
+
   useEffect(() => {
+    setLoading(true); // Set loading while fetching
+
+    const endpoint = orgId
+      ? `${import.meta.env.VITE_API_URL}/org-employees/${orgId}` // If org-id exists
+      : `${import.meta.env.VITE_API_URL}/employee`; // If org-id is not passed
+
     axios
-      .get(`${import.meta.env.VITE_API_URL}/employee`, {
+      .get(endpoint, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('auth_token')}`
         }
       })
       .then((response) => {
-        const fetchedEmployees = Array.isArray(response.data.data) ? response.data.data : Array.isArray(response.data) ? response.data : [];
+        const fetchedEmployees = Array.isArray(response.data.data)
+          ? response.data.data
+          : Array.isArray(response.data)
+          ? response.data
+          : [];
         setEmps(fetchedEmployees);
         setError('');
       })
@@ -33,7 +45,8 @@ const EmployeeIndexPage = ({ creator, successMessage }) => {
       .finally(() => {
         setLoading(false);
       });
-  }, []);
+  }, [orgId]); // Depend on orgId
+
 
   const handleDelete = async (emp) => {
     if (!window.confirm('Are you sure you want to delete this employee?')) return;
